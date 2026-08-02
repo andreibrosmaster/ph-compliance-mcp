@@ -83,7 +83,7 @@ jobs:
 
       - name: Publish corpus assets
         if: hashFiles('dist/corpus/*.sqlite') != ''
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.stamp.outputs.corpus_tag }}
           name: Corpus ${{ steps.stamp.outputs.corpus_date }}
