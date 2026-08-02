@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Golden evaluation set — compliance domains (ADR-004 expansion, Phase 5).
+
+  Same requirements as evaluation.xml (independent, read-only, complex,
+  realistic, verifiable, stable). Each pair carries a <plan> of tool calls the
+  run-eval harness executes against the live server; the <answer> must appear
+  in the retrieved text.
+
+  These pairs become passable once the compliance corpus (labor, payroll, tax,
+  HR, business-transactional, accounting) is seeded via build:corpus. Until
+  then the harness reports them as coverage-blocked, not as regressions.
+-->
+<evaluation>
+  <qa_pair>
+    <question>
+      Under PD 851, rank-and-file employees are entitled to 13th-month pay not
+      less than what fraction of total basic salary earned within the calendar
+      year?
+    </question>
+    <answer>1/12</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"13th month pay basic salary", "limit": 5}'/>
+      <tool name="search_issuance" args='{"query":"13th month pay rules implementing PD 851", "agency": "DOLE", "limit": 5}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Labor Code, what is the minimum service incentive leave
+      entitlement of an employee who has rendered at least one year of service?
+    </question>
+    <answer>five days</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"service incentive leave one year of service", "domain": "labor", "limit": 5}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Which agency under the Social Security Act of 2018 administers the
+      contributory social security system for private-sector employees?
+    </question>
+    <answer>Social Security System</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"Social Security System administration contribution", "domain": "payroll", "limit": 5}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the National Internal Revenue Code, as amended by the TRAIN law,
+      what is the threshold gross annual income up to which an individual
+      earning purely compensation income is exempt from income tax?
+    </question>
+    <answer>250,000</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"purely compensation income exempt threshold TRAIN", "domain": "tax", "limit": 5}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Revised Corporation Code, a corporation with a single
+      stockholder is called what?
+    </question>
+    <answer>one person corporation</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"single stockholder corporation one person corporation", "domain": "commercial-corporate", "limit": 5}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Data Privacy Act of 2012, what is the term for the natural or
+      juridical person who controls the processing of personal data?
+    </question>
+    <answer>personal information controller</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"controls the processing of personal data", "domain": "special", "limit": 5}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Government Procurement Reform Act, government procurement shall
+      be done primarily through what method?
+    </question>
+    <answer>competitive bidding</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"government procurement competitive bidding", "domain": "special", "limit": 5}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Occupational Safety and Health Standards Law, what is the
+      maximum number of employees an establishment must have before a full-time
+      safety officer is required?
+    </question>
+    <answer>50</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"safety officer number of employees required", "domain": "human-resources", "limit": 5}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Local Government Code, what is the term of office of elected
+      local officials such as governors, mayors, and councilors?
+    </question>
+    <answer>three years</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"term of office elected local officials", "domain": "local-government", "limit": 5}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Anti-Money Laundering Act, which agency is the financial
+      intelligence unit that receives and analyzes covered and suspicious
+      transaction reports?
+    </question>
+    <answer>Anti-Money Laundering Council</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"financial intelligence unit covered transaction reports", "domain": "special", "limit": 5}'/>
+    </plan>
+  </qa_pair>
+</evaluation>

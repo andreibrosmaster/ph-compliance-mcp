@@ -1,0 +1,54 @@
+# Philippine Legal & Compliance MCP (ph-compliance-mcp)
+
+> Retrieval-grounded, citation-verified access to Philippine law and compliance
+> over the Model Context Protocol (MCP). Statutes (Republic Acts, Presidential
+> Decrees, Executive Orders, codes), jurisprudence (G.R. decisions), and
+> government issuances (NGA memorandums/circulars, LGU issuances/ordinances,
+> GOCC rules). A source-of-truth retrieval layer — never a guesser.
+
+## Purpose
+
+`ph-compliance-mcp` is a local stdio MCP server that gives AI agents grounded,
+citable answers about Philippine legal and regulatory compliance. Every tool
+response carries a structured citation resolved against the corpus; below the
+confidence threshold tools return "insufficient corpus coverage" rather than
+guessing. It is information retrieval, not legal advice.
+
+## Key facts
+
+- **Transport**: MCP over stdio (JSON-RPC over stdin/stdout). No hosted server.
+- **Language/runtime**: TypeScript, Node.js 24+, pnpm.
+- **Storage**: three SQLite corpora — `laws.sqlite`, `cases.sqlite`, `issuances.sqlite` — FTS5 full-text search, SHA-256 checksum-verified release assets.
+- **Version-aware**: provisions carry valid_from/valid_until; an amendments log feeds show_amendments / show_history.
+- **Knowledge graph**: citations_graph connects cases→statutes, cases→cases, statutes→statutes (only resolved edges).
+- **Coverage**: 15 compliance domains (constitutional, civil, family, criminal, tax, labor, commercial-corporate, business-transactional, accounting, payroll, human-resources, remedial, administrative, local-government, special).
+
+## Tools (16)
+
+search_statute, get_provision, search_jurisprudence, get_case, search_issuance,
+get_issuance, cite_validate, list_domains, related_laws, related_cases,
+show_amendments, show_history, show_dependencies, show_citations,
+show_implementing_rules, show_cross_references.
+
+## Resources
+
+- ph-compliance://domains — taxonomy + freshness
+- ph-compliance://statute/{statute} — statute metadata + provision list
+
+## Documentation
+
+- [README.md](README.md) — overview, install, tool table, coverage
+- [docs/seo.md](docs/seo.md) — SEO/GEO strategy for this repository
+- [docs/sources.md](docs/sources.md) — authoritative Philippine legal data sources
+- [docs/marketplace/mcpmarket.md](docs/marketplace/mcpmarket.md) — competitive positioning
+- [docs/adr/](docs/adr/) — architecture decision records (ADR-000 scope, ADR-004 rename)
+- [AGENTS.md](AGENTS.md) — operating manual for AI agents working in this repo
+- [DISCLAIMER.md](DISCLAIMER.md) — not legal advice
+- [second brain (roadmap/state)](../second-brain/roadmap.md)
+
+## Project status
+
+Phases 0–4 implemented (foundations, pipeline, server, domain expansion,
+knowledge graph); Phase 5+ (embeddings, hybrid retrieval, compute tools,
+distribution polish) gated on roadmap. Verification of the full first-run
+toolchain is pending a Node 24 environment (see state.md).

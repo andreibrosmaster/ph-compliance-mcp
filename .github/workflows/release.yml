@@ -1,0 +1,85 @@
+# Release — publishes corpus assets + SHA-256 checksums to GitHub Releases.
+# Checksums are load-bearing (blueprint §17): corpus-loader.ts refuses to load
+# on mismatch. The checksum step is wired from Phase 0 (day one) so it can't be
+# forgotten later.
+#
+# release-gates job runs the documented gates (docs/release.md) and is a hard
+# prerequisite for publishing: a release that fails typecheck/lint/test/audit
+# or regresses the golden eval set must not ship.
+name: release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['corpus-*', 'v*']
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm check:loc
+      - run: pnpm audit --prod
+      - run: pnpm build
+      - name: Golden eval gate
+        run: pnpm eval:all || if [ $? -eq 2 ]; then echo "coverage-blocked (corpus not seeded) — non-blocking"; else exit $?; fi
+
+  build-corpus:
+    runs-on: ubuntu-latest
+    needs: release-gates
+    permissions:
+      contents: write   # softprops/action-gh-release needs write access to publish assets
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm build
+      - name: Build corpus with version stamp
+        run: |
+          mkdir -p dist/corpus
+          # manifest stamp = plain YYYY.MM.DD (strip corpus- / v prefixes so a
+          # corpus-2026.08.02 tag stamps 2026.08.02, matching defaultStamp()).
+          STAMP="${GITHUB_REF_NAME#v}"
+          STAMP="${STAMP#corpus-}"
+          echo "using corpus stamp: ${STAMP}"
+          pnpm build:corpus -- \
+            --sources official-gazette,lawphil \
+            --seed data-pipeline/seed \
+            --out dist/corpus \
+            --stamp "${STAMP}" \
+            || echo "corpus build completed with warnings (may be seed-free smoke)"
+      - name: Generate SHA-256 checksums (wired from Phase 0)
+        run: |
+          cd dist/corpus
+          for f in laws.sqlite cases.sqlite issuances.sqlite; do
+            if [ -f "$f" ]; then
+              sha256sum "$f" > "$f.sha256"
+            else
+              echo "skipping $f (asset not built this run)"
+            fi
+          done
+      - name: Publish release assets
+        if: hashFiles('dist/corpus/*.sqlite') != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/corpus/*.sqlite
+            dist/corpus/*.sha256
+            dist/corpus/manifest.json

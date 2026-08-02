@@ -1,0 +1,24 @@
+# CODEOWNERS — required-review ownership (enterprise governance).
+# Default: maintainers review everything.
+* @nicene-software/maintainers
+
+# Legal-accuracy-sensitive paths — always reviewed (never merged blind).
+/src/tools/ @nicene-software/maintainers
+/src/retrieval/ @nicene-software/maintainers
+/src/resources/ @nicene-software/maintainers
+/data-pipeline/ @nicene-software/maintainers
+/data-pipeline/catalog.ts @nicene-software/maintainers
+/data-pipeline/normalizers/ @nicene-software/maintainers
+/src/db/schema/ @nicene-software/maintainers
+
+# Golden eval sets — a wrong "answer" is a wrong release gate.
+/evals/ @nicene-software/maintainers
+
+# CI + release gates.
+/.github/workflows/ @nicene-software/maintainers
+/.github/dependabot.yml @nicene-software/maintainers
+/Dockerfile @nicene-software/maintainers
+
+# Docs + second brain (non-blocking but tracked).
+/docs/ @nicene-software/maintainers
+/README.md @nicene-software/maintainers

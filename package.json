@@ -1,0 +1,73 @@
+{
+  "name": "ph-compliance-mcp",
+  "version": "0.9.1",
+  "description": "Philippine Legal & Compliance MCP — retrieval-grounded, citation-verified access to PH statutes, jurisprudence, and government issuances (NGA/LGU/GOCC) with version-aware amendments, provenance, and a citations knowledge graph. A source-of-truth retrieval layer, never a guesser.",
+  "keywords": [
+    "philippines",
+    "philippine-law",
+    "legal-tech",
+    "compliance",
+    "mcp",
+    "model-context-protocol",
+    "jurisprudence",
+    "statutes",
+    "republic-act",
+    "presidential-decree",
+    "supreme-court",
+    "governance"
+  ],
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "build:corpus": "tsx data-pipeline/build-index.ts",
+    "dev": "tsx src/server.ts",
+    "start": "node dist/src/server.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check:loc": "node scripts/check-loc-budget.mjs",
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm check:loc",
+    "eval": "tsx evals/run-eval.ts",
+    "eval:all": "node scripts/eval-all.mjs",
+    "healthcheck": "node scripts/healthcheck.mjs",
+    "check:freshness": "node scripts/check-freshness.mjs",
+    "docker:build": "docker build -t ph-compliance-mcp .",
+    "inspector": "npx @modelcontextprotocol/inspector node dist/src/server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "better-sqlite3": "^12.4.1",
+    "cheerio": "^1.0.0",
+    "pdf-parse": "^1.1.1",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/better-sqlite3": "^7.6.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-prettier": "^10.0.0",
+    "globals": "^14.0.0",
+    "prettier": "^3.3.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.0.0",
+    "vitest": "^3.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild"
+    ]
+  }
+}

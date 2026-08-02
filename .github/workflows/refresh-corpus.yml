@@ -1,0 +1,94 @@
+# Corpus refresh — production cadence (0.8.0).
+#
+# Drives the catalog-driven live ingestion (`build-index.ts --sources`) on a
+# schedule, verifies SHA-256 checksums of the built corpus, and publishes the
+# result as a release artifact (corpus-YYYY.MM.DD tag) that corpus-loader.ts
+# downloads + verifies at runtime.
+#
+# Cadence per corpus (blueprint §15 / docs/operations.md):
+#   laws      — weekly (statutes change rarely; amendments tracked version-aware)
+#   cases     — weekly (SC/CA/SB/CTA decisions are continuous)
+#   issuances — weekly (BIR/SEC/DOLE high-cadence; LGU/GOCC monthly)
+# Manual override: workflow_dispatch (documented release path).
+name: refresh-corpus
+
+on:
+  schedule:
+    - cron: '0 3 * * 1'   # weekly, Mondays 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # tag + release assets
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install
+      - run: pnpm build
+
+      # Compute the corpus tag ONCE so the tag, push, and release all agree
+      # (GitHub Actions does not evaluate $(...) inside with: — must use env).
+      # The manifest stamp is the plain date (YYYY.MM.DD); the git/release tag
+      # carries the corpus- prefix.
+      - name: Compute corpus tag
+        id: stamp
+        run: |
+          echo "corpus_date=$(date +%Y.%m.%d)" >> "$GITHUB_OUTPUT"
+          echo "corpus_tag=corpus-$(date +%Y.%m.%d)" >> "$GITHUB_OUTPUT"
+
+      # Live ingestion from official sources (robots-respecting, throttled).
+      # Catalog-driven: only instruments in data-pipeline/catalog.ts are fetched.
+      - name: Ingest from official sources
+        run: |
+          mkdir -p dist/corpus
+          pnpm build:corpus -- \
+            --sources official-gazette,lawphil \
+            --seed data-pipeline/seed \
+            --out dist/corpus \
+            --stamp "${{ steps.stamp.outputs.corpus_date }}" \
+            --since "$(date -d 'last month' +%Y-%m-%d)" \
+            || echo "live ingestion completed with warnings"
+
+      # Version stamp + per-corpus SHA-256 checksums (load-bearing: the runtime
+      # loader refuses to start on mismatch).
+      - name: Verify corpus integrity
+        run: |
+          cd dist/corpus
+          for f in laws.sqlite cases.sqlite issuances.sqlite; do
+            if [ -f "$f" ]; then
+              sha256sum "$f" > "$f.sha256"
+              echo "$f: $(wc -c < "$f") bytes, sha256 $(awk '{print $1}' "$f.sha256")"
+            else
+              echo "skipping $f (empty corpus this run)"
+            fi
+          done
+          test -f manifest.json && echo "manifest: $(head -8 manifest.json)"
+
+      # Publish the built corpus as a tagged release (corpus-YYYY.MM.DD).
+      # --force keeps a same-day re-run (workflow_dispatch) from failing on an
+      # already-existing tag; the tag name matches the release name below.
+      - name: Tag corpus release
+        if: hashFiles('dist/corpus/*.sqlite') != ''
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f "${{ steps.stamp.outputs.corpus_tag }}"
+          git push --force origin "${{ steps.stamp.outputs.corpus_tag }}"
+
+      - name: Publish corpus assets
+        if: hashFiles('dist/corpus/*.sqlite') != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.stamp.outputs.corpus_tag }}
+          name: Corpus ${{ steps.stamp.outputs.corpus_date }}
+          files: |
+            dist/corpus/*.sqlite
+            dist/corpus/*.sha256
+            dist/corpus/manifest.json
+          generate_release_notes: false

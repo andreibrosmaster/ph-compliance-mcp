@@ -1,0 +1,43 @@
+# Path-to-label mapping for auto-label.yml (actions/labeler v5 syntax).
+"area: core-server":
+  - changed-files:
+      - any-glob-to-any-file: ["src/server.ts", "src/config.ts", "src/corpus-loader.ts", "src/db/**"]
+
+"area: tools":
+  - changed-files:
+      - any-glob-to-any-file: ["src/tools/**", "src/retrieval/**", "src/resources/**"]
+
+"area: domains":
+  - changed-files:
+      - any-glob-to-any-file: ["src/domains/**", "domains/**"]
+
+"area: pipeline":
+  - changed-files:
+      - any-glob-to-any-file: ["data-pipeline/**"]
+
+"area: corpus":
+  - changed-files:
+      - any-glob-to-any-file: ["data-pipeline/seed/**", "data-pipeline/catalog.ts"]
+
+"area: evals":
+  - changed-files:
+      - any-glob-to-any-file: ["evals/**"]
+
+"area: ci":
+  - changed-files:
+      - any-glob-to-any-file: [".github/**"]
+
+"area: docs":
+  - changed-files:
+      - any-glob-to-any-file: ["docs/**", "*.md"]
+
+"area: docker":
+  - changed-files:
+      - any-glob-to-any-file: ["Dockerfile", "compose.yaml", ".dockerignore"]
+
+"area: agents":
+  - changed-files:
+      - any-glob-to-any-file: ["docs/agents/**"]
+
+# NOTE: no `area: second-brain` — the repo is initialized inside ph-legal-mcp/
+# and second-brain/ lives outside the repository, so it can never be labeled.

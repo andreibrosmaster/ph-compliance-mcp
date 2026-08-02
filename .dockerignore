@@ -1,0 +1,23 @@
+# Build artifacts
+dist/
+node_modules/
+
+# Local state / caches
+.cache/
+.http-cache/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# Editors / OS
+.vscode/
+.idea/
+*.log
+.DS_Store
+
+# Git / CI
+.git/
+.github/
+
+# Test output
+coverage/
