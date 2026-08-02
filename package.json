@@ -1,6 +1,6 @@
 {
   "name": "ph-compliance-mcp",
-  "version": "0.9.1",
+  "version": "0.10.0",
   "description": "Philippine Legal & Compliance MCP — retrieval-grounded, citation-verified access to PH statutes, jurisprudence, and government issuances (NGA/LGU/GOCC) with version-aware amendments, provenance, and a citations knowledge graph. A source-of-truth retrieval layer, never a guesser.",
   "keywords": [
     "philippines",
@@ -26,6 +26,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "build:corpus": "tsx data-pipeline/build-index.ts",
+    "seed": "node scripts/generate-seed.mjs",
     "dev": "tsx src/server.ts",
     "start": "node dist/src/server.js",
     "typecheck": "tsc --noEmit",

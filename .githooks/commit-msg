@@ -1,0 +1,22 @@
+#!/bin/sh
+# commit-msg hook — enforce the attribution policy (AGENTS.md rule 1b).
+#
+# Rejects any commit message that credits an AI tool (Codebuff, "Co-Authored-By",
+# "Generated with", etc.) or any generated/AI handle. The user's identity is
+# andreibrosmaster; tool attribution trailers must never appear.
+#
+# Installed via core.hooksPath=.githooks (see AGENTS.md). POSIX sh so it runs
+# on Linux, macOS, and Git Bash on Windows.
+MSG_FILE="$1"
+
+# Banned substrings, case-insensitive.
+BANNED='codebuff\|co-authored-by\|generated with\|authored by codebuff\|\.ai\|github copilot'
+
+if grep -qi "$BANNED" "$MSG_FILE" 2>/dev/null; then
+  echo "commit-msg: rejected — AI attribution found in commit message." >&2
+  echo "Commit messages must not credit Codebuff or any AI tool." >&2
+  echo "(See AGENTS.md rule 1b; author identity is andreibrosmaster.)" >&2
+  exit 1
+fi
+
+exit 0

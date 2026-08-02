@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  Golden evaluation set — ph-legal-mcp (mcp-builder skill Phase 4).
+  Golden evaluation set — ph-compliance-mcp (mcp-builder skill Phase 4).
 
   Each question is answerable via the V1 tool surface (search_statute,
   get_provision, cite_validate) against the core corpus: 1987 Constitution,
   Civil Code, Family Code, Revised Penal Code. All answers are single, stable,
   verifiable-by-string-comparison facts.
+
+  Each pair carries a <plan> of tool calls the run-eval harness executes
+  against the live server; the <answer> must appear in the retrieved text.
+  Plans use short keyword queries that the seeded corpus answers via FTS5.
 
   Requirements (evaluation.md): independent, read-only, complex (multi-tool),
   realistic, verifiable, stable.
@@ -18,6 +22,10 @@
       process of law, nor denied the equal protection of the laws?
     </question>
     <answer>Article III, Section 1</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"due process of law equal protection", "limit": 5}'/>
+      <tool name="get_provision" args='{"statute":"1987 Constitution", "provision":"Art. III, Sec. 1"}'/>
+    </plan>
   </qa_pair>
 
   <qa_pair>
@@ -26,6 +34,9 @@
       for actions upon a written contract?
     </question>
     <answer>10 years</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"upon a written contract ten years", "domain": "civil", "limit": 5}'/>
+    </plan>
   </qa_pair>
 
   <qa_pair>
@@ -35,6 +46,9 @@
       law. Which article of the Family Code contains this definition?
     </question>
     <answer>Article 1</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"marriage special contract permanent union", "domain": "family", "limit": 5}'/>
+    </plan>
   </qa_pair>
 
   <qa_pair>
@@ -44,6 +58,9 @@
       persons is penalized as what crime?
     </question>
     <answer>theft</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"taking of personal property intent to gain", "domain": "criminal", "limit": 5}'/>
+    </plan>
   </qa_pair>
 
   <qa_pair>
@@ -52,6 +69,9 @@
       Constitution?
     </question>
     <answer>24</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"senate shall be composed of", "domain": "constitutional", "limit": 5}'/>
+    </plan>
   </qa_pair>
 
   <qa_pair>
@@ -60,6 +80,9 @@
       necessity to give, to do, or not to do?
     </question>
     <answer>Article 1156</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"obligation is a juridical necessity to give to do or not to do", "domain": "civil", "limit": 5}'/>
+    </plan>
   </qa_pair>
 
   <qa_pair>
@@ -68,6 +91,9 @@
       of the Philippines?
     </question>
     <answer>six years</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"president term of six years", "domain": "constitutional", "limit": 5}'/>
+    </plan>
   </qa_pair>
 
   <qa_pair>
@@ -75,6 +101,9 @@
       Under the Civil Code, at what age does a person attain majority?
     </question>
     <answer>18</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"age of majority eighteen years", "domain": "civil", "limit": 5}'/>
+    </plan>
   </qa_pair>
 
   <qa_pair>
@@ -84,6 +113,9 @@
       what crime?
     </question>
     <answer>murder</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"kill another with treachery evident premeditation", "domain": "criminal", "limit": 5}'/>
+    </plan>
   </qa_pair>
 
   <qa_pair>
@@ -92,5 +124,8 @@
       require whose consent?
     </question>
     <answer>parental</answer>
+    <plan>
+      <tool name="search_statute" args='{"query":"consent of their parents eighteen", "domain": "family", "limit": 5}'/>
+    </plan>
   </qa_pair>
 </evaluation>

@@ -11,7 +11,7 @@
  * Usage:
  *   pnpm build:corpus -- --seed data/seed --out dist/corpus [--corpus laws,cases] [--sources official-gazette,lawphil] [--stamp 2026.08.02]
  */
-import { existsSync, mkdirSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { defaultStamp, writeCorpusManifest } from "./manifest.js";
 import { HttpClient } from "./http-client.js";
@@ -111,7 +111,7 @@ async function ingestFromSources(
   const db = openCorpusDb(join(outDir, "laws.sqlite"), "laws");
   const cacheDir = join(outDir, ".http-cache");
   const client = new HttpClient({
-    userAgent: "ph-compliance-mcp/0.9.1 (corpus build; contact: repo issues)",
+    userAgent: "ph-compliance-mcp/0.10.0 (corpus build; contact: repo issues)",
     cacheDir,
     minDelayMs: 1000,
     maxConcurrency: 1,
@@ -209,6 +209,17 @@ async function main(): Promise<void> {
   const { seed, out, corpus, citations, sources, maxPerSource, since, stamp } = parseArgs(process.argv.slice(2));
   const versionStamp = stamp ?? defaultStamp();
   mkdirSync(out, { recursive: true });
+
+  // Deterministic rebuilds: the seed-driven build is not incremental. Stale
+  // sqlite files from a previous run would make re-running hit UNIQUE()
+  // constraints (cases.citation, issuance passages, etc.), so remove the
+  // targets before writing. The corpus is a derived artifact (ADR-003).
+  for (const name of corpus.split(",").map((s) => s.trim())) {
+    if (!["laws", "cases", "issuances"].includes(name)) continue;
+    for (const suffix of ["", "-wal", "-shm"]) {
+      rmSync(join(out, `${name}.sqlite${suffix}`), { force: true });
+    }
+  }
 
   // Live source adapters first (they populate laws.sqlite), then local seed files.
   let ingestedFromSources = 0;

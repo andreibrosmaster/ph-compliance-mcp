@@ -15,6 +15,13 @@ the operating manual.
 
 1. **One phase at a time.** Hand an agent one phase's task block plus the
    sections it depends on — never the whole blueprint at once.
+1b. **Git attribution is the user, never the AI tool.** Commit author and
+   committer are `andreibrosmaster <andreibrosmaster@users.noreply.github.com>`
+   (set repo-local in `.git/config`). NEVER use a Codebuff/Codebuff-Team/
+   AI-tool identity as author or committer, and NEVER include "Codebuff",
+   "Co-Authored-By", "Generated with …", or any AI-attribution trailer in
+   commit messages or file text. The `.githooks/commit-msg` guard rejects
+   these mechanically — do not bypass it.
 2. **Identity is `ph-compliance-mcp`.** The product is the **Philippine Legal &
    Compliance MCP** (ADR-004). Package name, server name (`ph-compliance`),
    resource scheme (`ph-compliance://`), env prefix (`PH_COMPLIANCE_`), README,

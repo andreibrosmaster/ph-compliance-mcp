@@ -101,6 +101,7 @@
     <answer>50</answer>
     <plan>
       <tool name="search_statute" args='{"query":"safety officer number of employees required", "domain": "human-resources", "limit": 5}'/>
+      <tool name="search_issuance" args='{"query":"safety officer more than fifty employees", "agency": "DOLE", "limit": 5}'/>
     </plan>
   </qa_pair>
 

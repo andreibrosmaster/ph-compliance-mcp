@@ -67,41 +67,9 @@ function parseArgs(argv: string[]): CliArgs {
   return args;
 }
 
-/** Normalize for answer matching: lowercase, collapse whitespace. */
-function normalize(s: string): string {
-  return s.toLowerCase().replace(/\s+/g, " ").trim();
-}
+import { answerMatches, collectText, normalize } from "./matching.js";
 
-/**
- * Match an answer inside retrieved text.
- *
- * Long answers use a plain substring check. Short answers use boundaries so
- * "24" cannot match inside "2024": word boundaries for plain words, and
- * digit boundaries for answers containing digits/punctuation so "250,000"
- * still matches "P250,000" or "₱250,000" (a preceding currency symbol is
- * not a digit, so the lookbehind passes).
- */
-function answerMatches(text: string, answer: string): boolean {
-  const haystack = normalize(text);
-  const needle = normalize(answer);
-  if (needle.length === 0) return false;
-  if (needle.length >= 8) return haystack.includes(needle);
-  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  if (/\d/.test(needle)) {
-    return new RegExp(`(?<![0-9])${escaped}(?![0-9])`).test(haystack);
-  }
-  return new RegExp(`\\b${escaped}\\b`).test(haystack);
-}
-
-/** Collect every text fragment from a CallToolResult (content + structured). */
-function collectText(result: { content?: Array<{ type: string; text?: string }>; structuredContent?: unknown }): string {
-  const parts: string[] = [];
-  for (const c of result.content ?? []) {
-    if (c.type === "text" && c.text) parts.push(c.text);
-  }
-  if (result.structuredContent) parts.push(JSON.stringify(result.structuredContent));
-  return parts.join("\n");
-}
+export { answerMatches, normalize };
 
 function parseGoldenXml(xml: string): QaPair[] {
   const $ = cheerio.load(xml, { xmlMode: true });
@@ -203,12 +171,21 @@ async function runPair(
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
+  // The SDK's StdioClientTransport on Windows inherits only a safe whitelist of
+  // env vars (getDefaultEnvironment) — PH_COMPLIANCE_* would be dropped and the
+  // spawned server would ignore PH_COMPLIANCE_LOCAL_CORPUS, try to download the
+  // corpus from GitHub Releases (404), crash, and the client would see
+  // "Connection closed". Forward them explicitly so eval:all's local-corpus
+  // wiring actually reaches the server under test.
   const transport = new StdioClientTransport({
     command: args.serverCommand,
     args: args.serverArgs,
     stderr: "pipe",
+    env: Object.fromEntries(
+      Object.entries(process.env).filter(([key]) => key.startsWith("PH_COMPLIANCE_")),
+    ),
   });
-  const client = new Client({ name: "ph-compliance-eval-harness", version: "0.9.1" });
+  const client = new Client({ name: "ph-compliance-eval-harness", version: "0.10.0" });
 
   let pairs: QaPair[];
   try {

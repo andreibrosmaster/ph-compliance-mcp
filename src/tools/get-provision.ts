@@ -40,11 +40,14 @@ export function registerGetProvision(server: McpServer, conn: CorpusConnection):
       },
     },
     async (args: z.infer<typeof Input>) => {
-      const provisionNo = args.provision
-        .replace(/^(art\.?\s*|article\s*|sec\.?\s*|section\s*)/i, "")
-        .trim();
-
-      const row = conn.db
+      // Normalize BOTH the arg and the stored provision_no: the seed corpus
+      // stores "Art. 1156"/"Sec. 5(b)" style numbers (they render in citations),
+      // while callers may pass "1156" or "Art. 1156". Stripping the leading
+      // article/section prefix on both sides makes the lookup prefix-agnostic.
+      const normalizeNo = (v: string) =>
+        v.replace(/^(art\.?\s*|article\s*|sec\.?\s*|section\s*)/i, "").trim().toLowerCase();
+      const wanted = normalizeNo(args.provision);
+      const rows = conn.db
         .prepare(
           `SELECT s.short_title, s.official_title, s.kind, s.domain, s.status AS statute_status,
                   p.provision_no, p.heading, p.body, p.status AS provision_status,
@@ -52,11 +55,24 @@ export function registerGetProvision(server: McpServer, conn: CorpusConnection):
            FROM provisions p
            JOIN statutes s ON s.id = p.statute_id
            WHERE lower(s.short_title) = lower(?)
-             AND lower(p.provision_no) = lower(?)
-           ORDER BY p.valid_from DESC
-           LIMIT 1`,
+           ORDER BY p.valid_from DESC`,
         )
-        .get(args.statute, provisionNo) as
+        .all(args.statute) as Array<
+        | {
+            short_title: string;
+            official_title: string;
+            kind: string;
+            domain: string;
+            statute_status: string;
+            provision_no: string;
+            heading: string | null;
+            body: string;
+            provision_status: string;
+            valid_from: string | null;
+            valid_until: string | null;
+          }
+        >;
+      const row = rows.find((r) => normalizeNo(r.provision_no) === wanted) as
         | {
             short_title: string;
             official_title: string;

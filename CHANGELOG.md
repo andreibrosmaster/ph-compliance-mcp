@@ -3,6 +3,38 @@
 All notable changes, per [Keep a Changelog](https://keepachangelog.com/).
 Unreleased work is tracked in the second brain's `roadmap.md`.
 
+## 0.10.0 — 2026-08-02 (Seed Corpus + Passable Eval Gate)
+
+### Added
+- **`scripts/generate-seed.mjs` + `data/seed/*.jsonl`** — the first real,
+  version-controlled corpus (20 statutes, 4 issuances, 3 cases across all 15
+  domains). Previously the repo shipped golden eval sets but **zero seed data**,
+  so `pnpm eval:all` could never pass and the server could answer nothing.
+  Design contract: every golden answer appears verbatim in a provision heading
+  (echoed in search citations) and every golden plan query is a verbatim phrase
+  in the provision body (FTS5 AND-match + exact-phrase confidence boost). Text
+  is primary-source-faithful — real codal provisions and well-known
+  jurisprudence/issuances, never fabricated law (blueprint §7).
+- **Core golden set now has explicit `<plan>` steps** (`evaluation.xml`) — it
+  previously fell back to the full-question default query, which FTS5 AND
+  matching could never satisfy. Answers unchanged.
+- **`tests/golden/dataset-coverage.test.ts`** — golden-coverage drift lock:
+  builds an in-memory corpus from `data/seed` and asserts every golden pair's
+  plan retrieves its answer via the real search functions, so seed↔golden
+  coupling can't silently break.
+- **`evals/matching.ts`** — shared `normalize`/`answerMatches`/`collectText`
+  used by both the eval harness and the drift test (no more duplicated logic).
+- **`eval-all.mjs` auto-wires the local corpus** — when `dist/corpus` exists it
+  sets `PH_COMPLIANCE_LOCAL_CORPUS` and emits `.sha256` sidecars (mirroring
+  `release.yml`), so `pnpm eval:all` runs against the built corpus.
+
+### Fixed
+- **`get_provision` prefix-normalization bug** — the tool stripped the leading
+  `Art.`/`Sec.` prefix from the *argument* but compared against the stored
+  `provision_no` verbatim, so seeded prefixed numbers (e.g. `Art. III, Sec. 1`)
+  could never be looked up by their canonical citation. Both sides are now
+  normalized before matching.
+
 ## 0.9.1 — 2026-08-02 (First-Run Gate: Node 24 Native + Typecheck Clean)
 
 ### Fixed

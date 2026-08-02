@@ -84,9 +84,19 @@ pnpm inspector      # MCP Inspector UI
 
 ### Build the corpus from seed data
 
+The repository ships a version-controlled seed corpus (`data/seed/*.jsonl` —
+20 statutes, 4 agency issuances, 3 landmark cases across all 15 compliance
+domains), authored from primary sources by `scripts/generate-seed.mjs`:
+
 ```bash
-pnpm build:corpus -- --seed data-pipeline/seed --out dist/corpus
+pnpm seed            # regenerate data/seed/*.jsonl (idempotent)
+pnpm build:corpus    # build dist/corpus from data/seed (defaults)
 ```
+
+The golden eval gate (`pnpm eval:all`) is **passable against this seed**: every
+golden QA pair's plan retrieves its answer from the seeded corpus, and
+`tests/golden/dataset-coverage.test.ts` locks that seed↔golden coupling so it
+cannot silently drift.
 
 The `[citations]` pass then populates the knowledge graph
 (`--no-citations` to skip). Live ingestion from official sources (CI-only,
