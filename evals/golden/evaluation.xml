@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Golden evaluation set — ph-legal-mcp (mcp-builder skill Phase 4).
+
+  Each question is answerable via the V1 tool surface (search_statute,
+  get_provision, cite_validate) against the core corpus: 1987 Constitution,
+  Civil Code, Family Code, Revised Penal Code. All answers are single, stable,
+  verifiable-by-string-comparison facts.
+
+  Requirements (evaluation.md): independent, read-only, complex (multi-tool),
+  realistic, verifiable, stable.
+-->
+<evaluation>
+  <qa_pair>
+    <question>
+      Which article and section of the 1987 Constitution guarantee that no
+      person shall be deprived of life, liberty, or property without due
+      process of law, nor denied the equal protection of the laws?
+    </question>
+    <answer>Article III, Section 1</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Civil Code of the Philippines, what is the prescriptive period
+      for actions upon a written contract?
+    </question>
+    <answer>10 years</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Family Code, marriage is defined as a special contract of
+      permanent union between a man and a woman entered into in accordance with
+      law. Which article of the Family Code contains this definition?
+    </question>
+    <answer>Article 1</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Revised Penal Code, the taking of personal property of another
+      with intent to gain and without violence against or intimidation of
+      persons is penalized as what crime?
+    </question>
+    <answer>theft</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      How many members compose the Senate of the Philippines under the 1987
+      Constitution?
+    </question>
+    <answer>24</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Which article of the Civil Code defines an obligation as a juridical
+      necessity to give, to do, or not to do?
+    </question>
+    <answer>Article 1156</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the 1987 Constitution, what is the term of office of the President
+      of the Philippines?
+    </question>
+    <answer>six years</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Civil Code, at what age does a person attain majority?
+    </question>
+    <answer>18</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Revised Penal Code, the killing of a person under circumstances
+      including treachery, evident premeditation, or cruelty is penalized as
+      what crime?
+    </question>
+    <answer>murder</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Family Code, marriages solemnized between persons aged 18 to 21
+      require whose consent?
+    </question>
+    <answer>parental</answer>
+  </qa_pair>
+</evaluation>

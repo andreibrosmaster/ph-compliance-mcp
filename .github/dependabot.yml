@@ -1,0 +1,43 @@
+# Dependabot — automated dependency updates (SECURITY.md dependency policy).
+# Two ecosystems: npm (runtime + dev) and GitHub Actions (workflow drift).
+# High/critical advisories are release-blockers; dependabot PRs keep the lockfile
+# current so `pnpm audit --prod` stays green.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Manila"
+    versioning-strategy: "auto"
+    open-pull-requests-limit: 10
+    groups:
+      mcp-sdk:
+        patterns:
+          - "@modelcontextprotocol/*"
+      zod:
+        patterns:
+          - "zod"
+      typescript-tooling:
+        patterns:
+          - "typescript"
+          - "typescript-eslint"
+          - "eslint*"
+          - "prettier"
+          - "vitest"
+    ignore:
+      # better-sqlite3 majors above the verified baseline (v12.4.1 on Node 24,
+      # ABI 137 prebuild) still need a runtime + native rebuild verification.
+      - dependency-name: "better-sqlite3"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Manila"
+    open-pull-requests-limit: 5

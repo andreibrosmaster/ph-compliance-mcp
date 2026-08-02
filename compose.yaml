@@ -1,0 +1,24 @@
+# docker compose example — ph-compliance-mcp
+#
+# The container exposes no ports (stdio-only). The typical pattern is a
+# sidecar that runs a build/refresh job and writes /corpus, while AI clients
+# spawn the container as their MCP server process.
+#
+#   docker compose build
+#   docker compose run --rm mcp node scripts/check-freshness.mjs
+#
+services:
+  mcp:
+    build: .
+    image: ph-compliance-mcp:local
+    # Pre-built, checksum-verified corpus (shared-team model, docs/enterprise.md).
+    # Mount a directory containing laws.sqlite/cases.sqlite/issuances.sqlite
+    # + .sha256 files; the server verifies checksums before loading.
+    volumes:
+      - ./corpus:/corpus:ro
+    # An MCP client would spawn this service; for a manual smoke test:
+    #   docker compose run --rm -i mcp < /dev/null
+    environment:
+      PH_COMPLIANCE_LOCAL_CORPUS: /corpus
+      PH_COMPLIANCE_CACHE_DIR: /cache
+      PH_COMPLIANCE_CONFIDENCE_THRESHOLD: "0.4"

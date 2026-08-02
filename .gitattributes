@@ -1,0 +1,26 @@
+# Git attributes — normalize line endings + improve diffs (enterprise standard).
+* text=auto eol=lf
+
+# Source
+*.ts text eol=lf
+*.mjs text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+
+# Docs
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sql text eol=lf
+
+# Binary / generated (never diff as text)
+*.sqlite binary
+*.sqlite-shm binary
+*.sqlite-wal binary
+*.png binary
+*.jpg binary
+*.lock binary
+
+# Linguist overrides (keep generated/config noise out of language stats)
+pnpm-lock.yaml linguist-generated=true
+dist/** linguist-generated=true
