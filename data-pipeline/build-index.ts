@@ -111,7 +111,7 @@ async function ingestFromSources(
   const db = openCorpusDb(join(outDir, "laws.sqlite"), "laws");
   const cacheDir = join(outDir, ".http-cache");
   const client = new HttpClient({
-    userAgent: "ph-compliance-mcp/0.10.0 (corpus build; contact: repo issues)",
+    userAgent: "ph-compliance-mcp/0.10.1 (corpus build; contact: repo issues)",
     cacheDir,
     minDelayMs: 1000,
     maxConcurrency: 1,

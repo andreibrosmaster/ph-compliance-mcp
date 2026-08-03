@@ -1,6 +1,6 @@
 {
   "name": "ph-compliance-mcp",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "description": "Philippine Legal & Compliance MCP — retrieval-grounded, citation-verified access to PH statutes, jurisprudence, and government issuances (NGA/LGU/GOCC) with version-aware amendments, provenance, and a citations knowledge graph. A source-of-truth retrieval layer, never a guesser.",
   "keywords": [
     "philippines",

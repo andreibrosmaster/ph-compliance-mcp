@@ -3,6 +3,28 @@
 All notable changes, per [Keep a Changelog](https://keepachangelog.com/).
 Unreleased work is tracked in the second brain's `roadmap.md`.
 
+## 0.10.1 — 2026-08-03 (Search-Engine Split + Eval UX)
+
+### Changed
+- **`src/retrieval/` split for the LOC budget** — `fts-search.ts` was 354 LOC
+  (over the 350 hard flag), breaking `pnpm check`/CI. The shared
+  FTS5/BM25 mechanics (match-expression builder, snippet, pagination, the
+  confidence-gated page query) moved to `fts-core.ts`; `fts-search.ts` is now
+  three thin spec-driven wrappers (`searchStatutes`/`searchCases`/
+  `searchIssuances`) over one generic `searchCorpus()` engine. Public API and
+  behavior unchanged — same SQL shapes, same confidence scoring, same pagination.
+- **`pnpm eval` now auto-wires the local corpus** — previously only `eval:all`
+  set `PH_COMPLIANCE_LOCAL_CORPUS` + emitted `.sha256` sidecars; a bare
+  `pnpm eval` spawned the server without them, it tried to download the corpus
+  from GitHub Releases (404), and the harness reported a confusing
+  "Connection closed". `run-eval.ts` now wires `dist/corpus` itself, and
+  `scripts/eval-all.mjs` drops its now-redundant copy (single source of truth).
+
+### Fixed
+- **`pnpm eval` failure mode** — no more silent corpus download attempt; a
+  missing local corpus is reported explicitly as coverage-blocked instead of
+  a transport-level crash.
+
 ## 0.10.0 — 2026-08-02 (Seed Corpus + Passable Eval Gate)
 
 ### Added

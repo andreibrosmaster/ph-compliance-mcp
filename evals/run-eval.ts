@@ -15,7 +15,10 @@
  *   pnpm eval -- --server "node dist/src/server.js" --golden evals/golden/evaluation-compliance.xml
  *   pnpm eval -- --skip-coverage-exit           # exit 0 even if corpus is empty
  */
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import * as cheerio from "cheerio";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
@@ -119,6 +122,31 @@ interface PairResult {
   detail: string;
 }
 
+const CORPUS_ASSETS = ["laws", "cases", "issuances"] as const;
+
+/**
+ * Point the spawned server at a locally built corpus (dist/corpus) when one
+ * exists, emitting the .sha256 sidecars corpus-loader verifies — mirroring
+ * what eval-all.mjs and release.yml do. Plain `pnpm eval` must not try to
+ * download the corpus from GitHub Releases (404 → "Connection closed").
+ */
+function wireLocalCorpus(): void {
+  if (process.env.PH_COMPLIANCE_LOCAL_CORPUS) return;
+  const corpusDir = join(process.cwd(), "dist", "corpus");
+  const present = CORPUS_ASSETS.filter((name) => existsSync(join(corpusDir, `${name}.sqlite`)));
+  if (present.length === 0) {
+    console.log("[eval] no local corpus in dist/corpus — server will report coverage-blocked pairs.");
+    return;
+  }
+  for (const name of present) {
+    const dbPath = join(corpusDir, `${name}.sqlite`);
+    const hex = createHash("sha256").update(readFileSync(dbPath)).digest("hex");
+    writeFileSync(`${dbPath}.sha256`, `${hex}  ${name}.sqlite\n`);
+  }
+  process.env.PH_COMPLIANCE_LOCAL_CORPUS = corpusDir;
+  console.log(`[eval] using local corpus: ${corpusDir} (${present.join(", ")})`);
+}
+
 async function runPair(
   client: Client,
   pair: QaPair,
@@ -171,6 +199,10 @@ async function runPair(
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
 
+  // Make the local corpus reachable before the transport is built so the
+  // spawned server sees PH_COMPLIANCE_LOCAL_CORPUS (forwarded below).
+  wireLocalCorpus();
+
   // The SDK's StdioClientTransport on Windows inherits only a safe whitelist of
   // env vars (getDefaultEnvironment) — PH_COMPLIANCE_* would be dropped and the
   // spawned server would ignore PH_COMPLIANCE_LOCAL_CORPUS, try to download the
@@ -185,7 +217,7 @@ async function main(): Promise<void> {
       Object.entries(process.env).filter(([key]) => key.startsWith("PH_COMPLIANCE_")),
     ),
   });
-  const client = new Client({ name: "ph-compliance-eval-harness", version: "0.10.0" });
+  const client = new Client({ name: "ph-compliance-eval-harness", version: "0.10.1" });
 
   let pairs: QaPair[];
   try {

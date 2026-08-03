@@ -13,8 +13,6 @@
  * Usage: node scripts/eval-all.mjs
  */
 import { spawnSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 
@@ -30,30 +28,9 @@ const require = createRequire(import.meta.url);
  */
 const TSX_CLI = join(require.resolve("tsx/package.json"), "..", "dist", "cli.mjs");
 
-/**
- * Point the spawned server at a locally built corpus (dist/corpus) when one
- * exists, and emit the .sha256 sidecars the corpus-loader verifies — mirroring
- * what release.yml publishes per Release asset.
- */
-function wireLocalCorpus() {
-  const corpusDir = join(process.cwd(), "dist", "corpus");
-  const assets = ["laws", "cases", "issuances"];
-  const present = assets.filter((name) => existsSync(join(corpusDir, `${name}.sqlite`)));
-  if (present.length === 0) {
-    console.log("[eval-all] no local corpus in dist/corpus — server will report coverage-blocked pairs.");
-    return;
-  }
-  for (const name of present) {
-    const dbPath = join(corpusDir, `${name}.sqlite`);
-    const sumPath = `${dbPath}.sha256`;
-    const hex = createHash("sha256").update(readFileSync(dbPath)).digest("hex");
-    writeFileSync(sumPath, `${hex}  ${name}.sqlite\n`);
-  }
-  process.env.PH_COMPLIANCE_LOCAL_CORPUS = corpusDir;
-  console.log(`[eval-all] using local corpus: ${corpusDir} (${present.join(", ")})`);
-}
-
-wireLocalCorpus();
+// run-eval.ts wires the local corpus (dist/corpus) into the server itself, so
+// no corpus setup is needed here — plain `pnpm eval` and `pnpm eval:all` both
+// use the same path.
 
 function runSet(golden) {
   const r = spawnSync(process.execPath, [TSX_CLI, "evals/run-eval.ts", "--golden", golden], {
