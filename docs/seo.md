@@ -50,11 +50,10 @@ GitHub indexes README content, topics, and file names. We optimize for that:
 - MCP server name: `ph-compliance`
 - Resource scheme: `ph-compliance://`
 - Env prefix: `PH_COMPLIANCE_`
-- Default GitHub repo: `nicene-software/ph-compliance-mcp`
+- Default GitHub repo: `andreibrosmaster/ph-compliance-mcp`
 
-The physical directory (`ph-legal-mcp/`) is a historical artifact of the pre-
-ADR-004 codename; the identity everywhere is `ph-compliance-mcp`. The directory
-rename happens atomically at first git init (see ADR-004).
+The physical directory is `ph-compliance-mcp/` (renamed from the pre-ADR-004
+`ph-legal-mcp/` codename); the identity everywhere is `ph-compliance-mcp`.
 
 ## Suggested README/repo hygiene (Phase 6, on track)
 

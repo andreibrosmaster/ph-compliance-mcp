@@ -16,7 +16,11 @@ import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import { join } from "node:path";
 
-const GOLDEN_SETS = ["evals/golden/evaluation.xml", "evals/golden/evaluation-compliance.xml"];
+const GOLDEN_SETS = [
+  "evals/golden/evaluation.xml",
+  "evals/golden/evaluation-compliance.xml",
+  "evals/golden/evaluation-compute.xml",
+];
 
 const require = createRequire(import.meta.url);
 /**

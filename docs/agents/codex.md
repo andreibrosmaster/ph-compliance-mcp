@@ -7,7 +7,7 @@ command writes these entries for you.
 ## Quick start (CLI)
 
 ```bash
-codex mcp add ph-compliance -- node /abs/path/ph-legal-mcp/dist/src/server.js
+codex mcp add ph-compliance -- node /abs/path/ph-compliance-mcp/dist/src/server.js
 codex mcp list
 ```
 
@@ -18,7 +18,7 @@ codex mcp list
 ```toml
 [mcp_servers.ph-compliance]
 command = "node"
-args = ["/abs/path/ph-legal-mcp/dist/src/server.js"]
+args = ["/abs/path/ph-compliance-mcp/dist/src/server.js"]
 env = { PH_COMPLIANCE_CONFIDENCE_THRESHOLD = "0.5" }
 ```
 
@@ -27,7 +27,7 @@ Or via pnpm:
 ```toml
 [mcp_servers.ph-compliance]
 command = "pnpm"
-args = ["--dir", "/abs/path/ph-legal-mcp", "start"]
+args = ["--dir", "/abs/path/ph-compliance-mcp", "start"]
 ```
 
 ## Using it

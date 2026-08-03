@@ -39,10 +39,19 @@ interface CliArgs {
   since?: string;
   /** Version stamp (defaults to today's date YYYY.MM.DD) — Phase 7 per-file stamps. */
   stamp?: string;
+  /** Allow a --sources run that ingested zero instruments to proceed (seed-only). */
+  sourcesAllowEmpty: boolean;
 }
 
 function parseArgs(argv: string[]): CliArgs {
-  const args: CliArgs = { seed: "data/seed", out: "dist/corpus", corpus: "laws,cases,issuances", citations: true, sources: [] };
+  const args: CliArgs = {
+    seed: "data/seed",
+    out: "dist/corpus",
+    corpus: "laws,cases,issuances",
+    citations: true,
+    sources: [],
+    sourcesAllowEmpty: false,
+  };
   for (let i = 0; i < argv.length; i++) {
     const flag = argv[i];
     const value = argv[i + 1];
@@ -69,6 +78,8 @@ function parseArgs(argv: string[]): CliArgs {
       i++;
     } else if (flag === "--no-citations") {
       args.citations = false;
+    } else if (flag === "--sources-allow-empty") {
+      args.sourcesAllowEmpty = true;
     }
   }
   return args;
@@ -107,54 +118,65 @@ async function ingestFromSources(
   adapters: SourceAdapter[],
   outDir: string,
   opts: { max?: number; since?: string },
-): Promise<number> {
+): Promise<{ records: number; passages: number }> {
   const db = openCorpusDb(join(outDir, "laws.sqlite"), "laws");
   const cacheDir = join(outDir, ".http-cache");
   const client = new HttpClient({
-    userAgent: "ph-compliance-mcp/0.10.1 (corpus build; contact: repo issues)",
+    userAgent: "ph-compliance-mcp/0.11.0 (corpus build; contact: repo issues)",
     cacheDir,
     minDelayMs: 1000,
     maxConcurrency: 1,
   });
   let total = 0;
+  let totalPassages = 0;
   try {
     for (const adapter of adapters) {
       let fromAdapter = 0;
-      for await (const doc of adapter.fetch(client, { max: opts.max, since: opts.since })) {
-        const entry = INSTRUMENT_CATALOG.find((e) => e.sourceUrl === doc.sourceUrl);
-        if (!entry) {
-          console.warn(`[${adapter.id}] no catalog entry for ${doc.sourceUrl} — skipping`);
-          continue;
-        }
-        // Idempotency guard: re-running --sources over an existing laws.sqlite
-        // must not duplicate a statute already ingested from the same source.
-        // (Guard is scoped to the sources path; seed records share their own
-        // sourceUrl, so a seed + sources overlap is not expected.)
-        const existing = db
-          .prepare("SELECT id FROM statutes WHERE short_title = ? AND source_url = ? LIMIT 1")
-          .get(entry.shortTitle, doc.sourceUrl) as { id: number } | undefined;
-        if (existing) {
-          console.log(`  [${adapter.id}] ${entry.shortTitle} already ingested (#${existing.id}) — skipping`);
-          continue;
-        }
-        const rec = normalizeStatute(doc, {
-          shortTitle: entry.shortTitle,
-          officialTitle: entry.officialTitle ?? entry.shortTitle,
-          kind: mapCatalogKind(entry.kind),
-          domain: entry.domain,
-          enactedDate: entry.enactedDate,
-        });
+      try {
+        for await (const doc of adapter.fetch(client, { max: opts.max, since: opts.since })) {
+          const entry = INSTRUMENT_CATALOG.find((e) => e.sourceUrl === doc.sourceUrl);
+          if (!entry) {
+            console.warn(`[${adapter.id}] no catalog entry for ${doc.sourceUrl} — skipping`);
+            continue;
+          }
+          // Idempotency guard: re-running --sources over an existing laws.sqlite
+          // must not duplicate a statute already ingested from the same source.
+          // (Guard is scoped to the sources path; seed records share their own
+          // sourceUrl, so a seed + sources overlap is not expected.)
+          const existing = db
+            .prepare("SELECT id FROM statutes WHERE short_title = ? AND source_url = ? LIMIT 1")
+            .get(entry.shortTitle, doc.sourceUrl) as { id: number } | undefined;
+          if (existing) {
+            console.log(`  [${adapter.id}] ${entry.shortTitle} already ingested (#${existing.id}) — skipping`);
+            continue;
+          }
+          const rec = normalizeStatute(doc, {
+            shortTitle: entry.shortTitle,
+            officialTitle: entry.officialTitle ?? entry.shortTitle,
+            kind: mapCatalogKind(entry.kind),
+            domain: entry.domain,
+            enactedDate: entry.enactedDate,
+          });
         const id = insertStatute(db, rec);
         fromAdapter++;
         total++;
+        totalPassages += rec.provisions.length;
         console.log(`  [${adapter.id}] ${entry.shortTitle} -> statute #${id} (${rec.provisions.length} provisions)`);
+        }
+      } catch (err) {
+        // One failing instrument (HTTP 403/404, network hiccup) must not abort
+        // the whole source run — report it, keep going, and let the caller
+        // decide whether the partial corpus is usable.
+        console.error(
+          `[${adapter.id}] ERROR while ingesting: ${err instanceof Error ? err.message : String(err)} — continuing with next instrument`,
+        );
       }
       console.log(`[${adapter.id}] ${fromAdapter} instruments ingested`);
     }
   } finally {
     db.close();
   }
-  return total;
+  return { records: total, passages: totalPassages };
 }
 
 async function buildCorpus(
@@ -206,7 +228,7 @@ async function buildCorpus(
 }
 
 async function main(): Promise<void> {
-  const { seed, out, corpus, citations, sources, maxPerSource, since, stamp } = parseArgs(process.argv.slice(2));
+  const { seed, out, corpus, citations, sources, maxPerSource, since, stamp, sourcesAllowEmpty } = parseArgs(process.argv.slice(2));
   const versionStamp = stamp ?? defaultStamp();
   mkdirSync(out, { recursive: true });
 
@@ -222,7 +244,7 @@ async function main(): Promise<void> {
   }
 
   // Live source adapters first (they populate laws.sqlite), then local seed files.
-  let ingestedFromSources = 0;
+  let ingestedFromSources = { records: 0, passages: 0 };
   if (sources.length > 0) {
     const adapters = sources.map((id) => adapterById(id)).filter((a): a is SourceAdapter => Boolean(a));
     const missing = sources.filter((id) => !adapterById(id));
@@ -232,7 +254,20 @@ async function main(): Promise<void> {
     }
     if (adapters.length > 0) {
       ingestedFromSources = await ingestFromSources(adapters, out, { max: maxPerSource, since });
-      console.log(`Ingested ${ingestedFromSources} instruments from ${adapters.length} source adapter(s)`);
+      console.log(
+        `Ingested ${ingestedFromSources.records} instruments / ${ingestedFromSources.passages} passages from ${adapters.length} source adapter(s)`,
+      );
+      // A fully-failed source run (403/404 on everything) must not silently
+      // publish a freshly-stamped, seed-only corpus — refresh-corpus.yml would
+      // treat it as a good refresh. Fail loudly unless the caller opted out.
+      if (ingestedFromSources.records === 0 && !sourcesAllowEmpty) {
+        console.error(
+          "[build-corpus] ERROR: --sources requested but NO instruments were ingested — " +
+            "the source run failed (see adapter errors above). Refusing to stamp a stale corpus. " +
+            "Use --sources-allow-empty to proceed with seed data only.",
+        );
+        process.exitCode = 1;
+      }
     }
   }
 
@@ -243,6 +278,16 @@ async function main(): Promise<void> {
   for (const corpusName of corpus.split(",").map((s) => s.trim())) {
     stats[corpusName] = await buildCorpus(corpusName, records, out);
     console.log(`[${corpusName}] ${stats[corpusName]!.records} records, ${stats[corpusName]!.passages} passages/provisions indexed`);
+  }
+
+  // Manifest honesty: the seed build reports only seed records; when --sources
+  // also ingested statutes into laws.sqlite, fold those into the manifest so
+  // the published record counts reflect the actual corpus.
+  if (ingestedFromSources.records > 0 && stats["laws"]) {
+    stats["laws"] = {
+      records: stats["laws"].records + ingestedFromSources.records,
+      passages: stats["laws"].passages + ingestedFromSources.passages,
+    };
   }
 
   // Phase 4: populate the citation graph once laws + cases both exist.
@@ -279,5 +324,8 @@ async function main(): Promise<void> {
 
 main().catch((err) => {
   console.error(err);
-  process.exit(1);
+  // Use exitCode (not process.exit) so Node drains pending handles (HTTP
+  // sockets, timers) naturally — process.exit() while a fetch handle is open
+  // crashes on Windows with a uv_handle_closing assertion.
+  process.exitCode = 1;
 });

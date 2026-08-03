@@ -4,7 +4,7 @@ import { loadConfig } from "../../src/config.js";
 describe("loadConfig", () => {
   it("applies defaults", () => {
     const cfg = loadConfig({});
-    expect(cfg.repo).toBe("nicene-software/ph-compliance-mcp");
+    expect(cfg.repo).toBe("andreibrosmaster/ph-compliance-mcp");
     expect(cfg.confidenceThreshold).toBe(0.4);
     expect(cfg.logLevel).toBe("info");
   });

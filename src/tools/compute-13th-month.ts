@@ -31,6 +31,32 @@ const Output = z
   })
   .passthrough();
 
+/**
+ * Pure 13th-month-pay computation (PD 851, Rules Implementing PD 851 Sec.
+ * 2(a)): total basic salary earned within the calendar year ÷ 12. Exported so
+ * the tool, the eval harness, and the golden drift test share one implementation.
+ */
+export function compute13thMonth(totalBasicSalary: number) {
+  const amount = Number((totalBasicSalary / 12).toFixed(2));
+  return {
+    status: "ok",
+    formula: "total basic salary earned within the calendar year ÷ 12",
+    totalBasicSalary,
+    amount,
+    payableOnOrBefore: "December 24 of the calendar year",
+    coverage:
+      "Rank-and-file employees, regardless of the amount of basic salary (salary ceiling removed by " +
+      "Memorandum Order No. 28, Aug 13, 1986).",
+    exclusions:
+      "Government and political subdivisions (incl. GOCCs operating as government agencies, except private " +
+      "subsidiaries); employers already paying an equivalent or higher 13th-month pay/bonus (≥ 1/12 of " +
+      "basic salary); household helpers and persons in the personal service of another; workers paid on a " +
+      "purely commission, boundary, or task basis (piece-rate workers ARE covered).",
+    authority: "PD 851; Memorandum Order No. 28 (1986); Rules Implementing PD 851, Sec. 2(a)",
+    verify: "Check current DOLE advisories and the collected rules via get_issuance / search_issuance (agency DOLE).",
+  };
+}
+
 export function registerCompute13thMonth(server: McpServer): void {
   server.registerTool(
     "compute_13th_month",
@@ -52,28 +78,7 @@ export function registerCompute13thMonth(server: McpServer): void {
       },
     },
     async (args: z.infer<typeof Input>) => {
-      // PD 851, Rules Implementing PD 851 Sec. 2(a): 13th month pay = total
-      // basic salary earned within the calendar year ÷ 12. A partial year is
-      // handled naturally because the input is what was actually earned.
-      const amount = Number((args.totalBasicSalary / 12).toFixed(2));
-
-      return textResult({
-        status: "ok",
-        formula: "total basic salary earned within the calendar year ÷ 12",
-        totalBasicSalary: args.totalBasicSalary,
-        amount,
-        payableOnOrBefore: "December 24 of the calendar year",
-        coverage:
-          "Rank-and-file employees, regardless of the amount of basic salary (salary ceiling removed by " +
-          "Memorandum Order No. 28, Aug 13, 1986).",
-        exclusions:
-          "Government and political subdivisions (incl. GOCCs operating as government agencies, except private " +
-          "subsidiaries); employers already paying an equivalent or higher 13th-month pay/bonus (≥ 1/12 of " +
-          "basic salary); household helpers and persons in the personal service of another; workers paid on a " +
-          "purely commission, boundary, or task basis (piece-rate workers ARE covered).",
-        authority: "PD 851; Memorandum Order No. 28 (1986); Rules Implementing PD 851, Sec. 2(a)",
-        verify: "Check current DOLE advisories and the collected rules via get_issuance / search_issuance (agency DOLE).",
-      });
+      return textResult(compute13thMonth(args.totalBasicSalary));
     },
   );
 }

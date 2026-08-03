@@ -21,6 +21,10 @@ import { fileURLToPath } from "node:url";
 import * as cheerio from "cheerio";
 import { openCorpusDb, insertStatute, insertIssuance } from "../../data-pipeline/db.js";
 import { searchStatutes, searchIssuances } from "../../src/retrieval/fts-search.js";
+import { compute13thMonth } from "../../src/tools/compute-13th-month.js";
+import { computePrescription } from "../../src/tools/compute-prescription.js";
+import type { ActionKey } from "../../src/tools/compute-prescription.js";
+import { computeDeadline } from "../../src/tools/compute-deadline.js";
 import { answerMatches } from "../../evals/matching.js";
 import type { Config } from "../../src/config.js";
 
@@ -29,6 +33,7 @@ const SEED_DIR = join(ROOT, "data", "seed");
 const GOLDEN_SETS = [
   join(ROOT, "evals", "golden", "evaluation.xml"),
   join(ROOT, "evals", "golden", "evaluation-compliance.xml"),
+  join(ROOT, "evals", "golden", "evaluation-compute.xml"),
 ];
 
 interface PlanStep {
@@ -170,6 +175,30 @@ function runStep(
       const match = row.find((r) => r.provision_no.replace(/^(art\.?\s*|article\s*|sec\.?\s*|section\s*)/i, "").trim().toLowerCase() === provisionNo.toLowerCase());
       if (!match) return { text: "", coverage: true };
       return { text: JSON.stringify({ citation: `${String(args.statute)}, ${match.provision_no}`, body: match.body }), coverage: false };
+    }
+    case "compute_13th_month": {
+      return { text: JSON.stringify(compute13thMonth(Number(args.totalBasicSalary ?? 0))), coverage: false };
+    }
+    case "compute_prescription": {
+      return {
+        text: JSON.stringify(
+          computePrescription(args.actionType as ActionKey, args.causeOfActionDate as string | undefined),
+        ),
+        coverage: false,
+      };
+    }
+    case "compute_deadline": {
+      return {
+        text: JSON.stringify(
+          computeDeadline(
+            args.filingType as Parameters<typeof computeDeadline>[0],
+            String(args.noticeDate ?? ""),
+            args.holidays as string[] | undefined,
+            args.extensionDays as number | undefined,
+          ),
+        ),
+        coverage: false,
+      };
     }
     case "cite_validate":
     case "list_domains":

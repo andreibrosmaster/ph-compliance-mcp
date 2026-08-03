@@ -21,19 +21,19 @@ Every client ultimately needs the same three fields: the **command** that
 launches the server, its **args**, and any **env**. For a locally built clone:
 
 ```bash
-cd ph-legal-mcp
+cd ph-compliance-mcp
 pnpm install && pnpm build
 ```
 
 Then the command is:
 
 - **Command:** `node` (or the absolute path to your node binary)
-- **Args:** `["/absolute/path/to/ph-legal-mcp/dist/src/server.js"]`
+- **Args:** `["/absolute/path/to/ph-compliance-mcp/dist/src/server.js"]`
 
 or, from the repo root:
 
 - **Command:** `pnpm`
-- **Args:** `["--dir", "/absolute/path/to/ph-legal-mcp", "start"]`
+- **Args:** `["--dir", "/absolute/path/to/ph-compliance-mcp", "start"]`
 
 Use absolute paths — clients spawn the process from arbitrary working
 directories.

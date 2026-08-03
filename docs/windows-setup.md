@@ -7,7 +7,7 @@ unblocks everything else.
 
 ## Option A — one double-click (recommended)
 
-1. Open `ph-legal-mcp/scripts/` in Explorer.
+1. Open `ph-compliance-mcp/scripts/` in Explorer.
 2. Double-click **`setup-bash.cmd`** (or right-click `setup-bash.ps1` → *Run
    with PowerShell*).
 3. The script detects existing bash (**Git Bash / MSYS2 only — WSL is

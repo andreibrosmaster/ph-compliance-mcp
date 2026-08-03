@@ -142,6 +142,40 @@ const statutes = [
         heading: "Right to Health",
         body: "The State shall protect and promote the right to health of the people and instill health consciousness among them.",
       },
+      {
+        no: "Art. III, Sec. 2",
+        heading: "Unreasonable Searches and Seizures — Probable Cause",
+        body: "The right of the people to be secure in their persons, houses, papers, and effects against unreasonable searches and seizures of whatever nature and for any purpose shall be inviolable, and no search warrant or warrant of arrest shall issue except upon probable cause to be determined personally by the judge after examination under oath or affirmation of the complainant and the witnesses he may produce, and particularly describing the place to be searched and the persons or things to be seized.",
+      },
+    ],
+  }),
+  statute({
+    shortTitle: "Rules of Court",
+    officialTitle: "Rules of Court (2019 Rules of Civil Procedure, as amended)",
+    kind: "rules",
+    domain: "remedial",
+    sourceUrl: "https://elibrary.judiciary.gov.ph/thebookshelf/showdocs/1/63852",
+    provisions: [
+      {
+        no: "Rule 22, Sec. 1",
+        heading: "Computation of Time — Exclude First Day, Include Last",
+        body: "In computing any period of time prescribed or allowed by these Rules, or by order of the court, or by any applicable statute, the day of the act or event from which the designated period of time begins to run is to be excluded and the last day of the period is to be included; if the last day falls on a Saturday, Sunday, or legal holiday, the time shall run until the next working day.",
+      },
+      {
+        no: "Rule 37, Sec. 1",
+        heading: "New Trial or Reconsideration — 15 Days",
+        body: "A party may file a motion for new trial or a motion for reconsideration within fifteen (15) days from notice of the judgment or final order, and no extension of time may be granted for the filing of either motion.",
+      },
+      {
+        no: "Rule 45, Sec. 2",
+        heading: "Appeal by Certiorari to the Supreme Court — 15 Days",
+        body: "The petition for review on certiorari shall be filed within fifteen (15) days from notice of the judgment or final order or resolution of the Court of Appeals, or from the denial of the petitioner's timely motion for new trial or reconsideration, and the Court may grant an additional period not exceeding thirty (30) days on motion.",
+      },
+      {
+        no: "Rule 65, Sec. 4",
+        heading: "Certiorari, Prohibition, Mandamus — 60 Days",
+        body: "The petition for certiorari, prohibition, or mandamus may be filed not later than sixty (60) days from notice of the judgment, order, or resolution sought to be assailed, or from the denial of a timely motion for reconsideration.",
+      },
     ],
   }),
   statute({
@@ -162,6 +196,26 @@ const statutes = [
         no: "Art. 1144",
         heading: "Prescriptive periods — 10 years for written contracts",
         body: "The following actions must be brought within ten (10) years from the time the right of action accrues: (1) Upon a written contract; (2) Upon an obligation arising from law; (3) Upon a judgment.",
+      },
+      {
+        no: "Art. 1145",
+        heading: "Prescriptive periods — 6 years for oral contracts and quasi-contracts",
+        body: "The following actions must be commenced within six (6) years: (1) Upon an oral contract; (2) Upon a quasi-contract.",
+      },
+      {
+        no: "Art. 1146",
+        heading: "Prescriptive periods — 4 years for injury to rights and quasi-delicts",
+        body: "The following actions must be instituted within four (4) years: (1) Upon an injury to the rights of the plaintiff; (2) Upon a quasi-delict.",
+      },
+      {
+        no: "Art. 1147",
+        heading: "Prescriptive periods — 1 year for forcible entry, detainer, and defamation",
+        body: "The following actions must be filed within one (1) year: (1) For forcible entry and detainer; (2) For defamation.",
+      },
+      {
+        no: "Art. 1149",
+        heading: "Residual prescriptive period — 5 years",
+        body: "All other actions whose periods are not fixed in this Code or in other laws must be brought within five (5) years from the time the right of action accrues.",
       },
       {
         no: "Art. 402",
@@ -208,7 +262,7 @@ const statutes = [
     actNumber: "3815",
     domain: "criminal",
     enactedDate: "1932-01-01",
-    sourceUrl: `${LAWPHIL}/statutes/acts/act_3815_1930.html`,
+    sourceUrl: `${OG}/1930/12/08/act-no-3815/`,
     provisions: [
       {
         no: "Art. 248",

@@ -156,6 +156,9 @@ export class HttpClient {
         }
       }
       if (res.status < 200 || res.status >= 300) {
+        // Release the socket before throwing — an abandoned body keeps the
+        // libuv handle open and can crash process.exit() on Windows.
+        await res.body?.cancel().catch(() => undefined);
         throw new Error(`HTTP ${res.status} fetching ${url}`);
       }
       const bytes = Buffer.from(await res.arrayBuffer());

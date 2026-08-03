@@ -3,6 +3,55 @@
 All notable changes, per [Keep a Changelog](https://keepachangelog.com/).
 Unreleased work is tracked in the second brain's `roadmap.md`.
 
+## 0.11.0 — 2026-08-03 (Identity Completion + Compute Eval Gate + Corpus Growth)
+
+### Changed
+- **Physical directory renamed `ph-legal-mcp/` → `ph-compliance-mcp/`** — the
+  ADR-004 promise ("renamed at first git init") is finally fulfilled; the
+  folder now matches the package/server identity everywhere.
+- **Distribution default fixed** — `PH_COMPLIANCE_REPO` default was
+  `nicene-software/ph-compliance-mcp` (a repo that was never created); it is
+  now `andreibrosmaster/ph-compliance-mcp`, matching the real `origin`. A
+  fresh install would otherwise have 404'd on the corpus download. Updated
+  `config.test.ts`, README install JSON, `docs/seo.md`.
+- **Stale public surface synced** — `llms.txt` said "16 tools" and that
+  verification was still pending; it now lists all 19 tools and the verified
+  status. `docs/agents/*` and `docs/windows-setup.md` paths now say
+  `ph-compliance-mcp`.
+- **Compute tools expose pure functions** — `compute13thMonth()`,
+  `computePrescription()`, `computeDeadline()` are now exported so the MCP
+  tool, the eval harness, and the golden drift test share one implementation
+  (single source of truth for the deterministic calculations).
+- **New golden set `evaluation-compute.xml`** (6 pairs) — the compute tools
+  are now eval-gated like everything else; `pnpm eval:all` runs all three
+  sets (core 10 + compliance 10 + compute 6). `dataset-coverage.test.ts`
+  executes compute plans against the pure functions.
+
+### Added
+- **Seed corpus growth** — `Rules of Court` added (the remedial domain was
+  previously empty), plus Civil Code prescription articles 1145–1149 and
+  Constitution Art. III Sec. 2. 21 statutes / 4 issuances / 3 cases.
+- **Catalog URL corrections** — lawphil URLs that 404 (pd1529, pd612, pd1445,
+  pd851, ra3019) fixed to the live paths; RPC + Negotiable Instruments Law
+  pointed at the Official Gazette (lawphil hosts no copies).
+
+### Fixed
+- **`--sources` ingestion crash on Windows** — `main().catch()` used
+  `process.exit(1)` while a fetch socket was still open, crashing with a
+  `uv_handle_closing` assertion (exit 0xC0000409). Now sets `process.exitCode`
+  and lets Node drain pending handles; `http-client` releases the response
+  body before throwing on non-2xx.
+- **`--sources` abort-on-first-error** — one HTTP 403/404 no longer aborts the
+  whole run; `ingestFromSources` reports the failing instrument and continues.
+- **Manifest honesty with `--sources`** — `manifest.json` record/passage
+  counts previously reflected only the seed build; source-ingested statutes
+  are now folded into the `laws` stats so the published counts match the real
+  corpus.
+- **Silent total source failure** — a `--sources` run where every fetch failed
+  ingested 0 instruments yet exited 0 and stamped a fresh, seed-only corpus
+  (masking the failure in `refresh-corpus.yml`). It now exits 1 with a clear
+  error; `--sources-allow-empty` opts into seed-only fallback.
+
 ## 0.10.1 — 2026-08-03 (Search-Engine Split + Eval UX)
 
 ### Changed

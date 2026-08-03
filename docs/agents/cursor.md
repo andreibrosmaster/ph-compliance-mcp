@@ -7,7 +7,7 @@ command also works.
 ## Quick start (CLI)
 
 ```bash
-cursor mcp add ph-compliance -- node /abs/path/ph-legal-mcp/dist/src/server.js
+cursor mcp add ph-compliance -- node /abs/path/ph-compliance-mcp/dist/src/server.js
 cursor mcp list
 ```
 
@@ -18,7 +18,7 @@ cursor mcp list
   "mcpServers": {
     "ph-compliance": {
       "command": "node",
-      "args": ["/abs/path/ph-legal-mcp/dist/src/server.js"],
+      "args": ["/abs/path/ph-compliance-mcp/dist/src/server.js"],
       "env": {
         "PH_COMPLIANCE_CONFIDENCE_THRESHOLD": "0.5"
       }
@@ -34,7 +34,7 @@ Or via pnpm:
   "mcpServers": {
     "ph-compliance": {
       "command": "pnpm",
-      "args": ["--dir", "/abs/path/ph-legal-mcp", "start"]
+      "args": ["--dir", "/abs/path/ph-compliance-mcp", "start"]
     }
   }
 }

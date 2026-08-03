@@ -217,7 +217,7 @@ async function main(): Promise<void> {
       Object.entries(process.env).filter(([key]) => key.startsWith("PH_COMPLIANCE_")),
     ),
   });
-  const client = new Client({ name: "ph-compliance-eval-harness", version: "0.10.1" });
+  const client = new Client({ name: "ph-compliance-eval-harness", version: "0.11.0" });
 
   let pairs: QaPair[];
   try {

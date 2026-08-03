@@ -23,12 +23,13 @@ guessing. It is information retrieval, not legal advice.
 - **Knowledge graph**: citations_graph connects cases→statutes, cases→cases, statutes→statutes (only resolved edges).
 - **Coverage**: 15 compliance domains (constitutional, civil, family, criminal, tax, labor, commercial-corporate, business-transactional, accounting, payroll, human-resources, remedial, administrative, local-government, special).
 
-## Tools (16)
+## Tools (19)
 
 search_statute, get_provision, search_jurisprudence, get_case, search_issuance,
 get_issuance, cite_validate, list_domains, related_laws, related_cases,
 show_amendments, show_history, show_dependencies, show_citations,
-show_implementing_rules, show_cross_references.
+show_implementing_rules, show_cross_references, compute_prescription,
+compute_deadline, compute_13th_month.
 
 ## Resources
 
@@ -49,6 +50,9 @@ show_implementing_rules, show_cross_references.
 ## Project status
 
 Phases 0–4 implemented (foundations, pipeline, server, domain expansion,
-knowledge graph); Phase 5+ (embeddings, hybrid retrieval, compute tools,
-distribution polish) gated on roadmap. Verification of the full first-run
-toolchain is pending a Node 24 environment (see state.md).
+knowledge graph); Phase 5 compute tools (compute_prescription, compute_deadline,
+compute_13th_month) implemented. The first-run toolchain has been verified
+(2026-08-03): `pnpm install / typecheck / test / build:corpus / eval` all green
+on Node 24; the golden eval gates (`pnpm eval:all`) pass against the seeded
+corpus. Embeddings + hybrid retrieval remain gated on the roadmap (ADR-002).
+See state.md in the second brain.

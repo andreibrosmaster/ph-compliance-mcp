@@ -104,6 +104,60 @@ function lastWorkingDay(start: Date, days: number, holidays: Set<string>): Date 
   return d;
 }
 
+/**
+ * Pure filing-deadline computation (Rules of Court Rule 22 + Rule 37/41/45/65
+ * periods). Exported so the tool, the eval harness, and the golden drift test
+ * share one source of truth for the deterministic calculation.
+ */
+export function computeDeadline(
+  filingType: z.infer<typeof FilingType>,
+  noticeDate: string,
+  holidays?: string[],
+  extensionDays?: number,
+) {
+  const period = PERIODS[filingType];
+  const start = parseIso(noticeDate);
+  if (!start) {
+    return {
+      status: "invalid_date",
+      message: "noticeDate must be an ISO date (YYYY-MM-DD).",
+      lastDay: null,
+    };
+  }
+
+  const holidaySet = new Set(holidays ?? []);
+  for (const h of holidays ?? []) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(h)) {
+      return {
+        status: "invalid_date",
+        message: `holidays entries must be ISO dates (YYYY-MM-DD): ${h}`,
+        lastDay: null,
+      };
+    }
+  }
+
+  // Rule 45 §2 is the only period with an allowed extension (max 30 days);
+  // extensionDays is intentionally ignored for other filing types.
+  const extension = filingType === "appeal_certiorari_sc" ? (extensionDays ?? 0) : 0;
+  const totalDays = period.days + Math.min(extension, 30);
+  const lastDay = lastWorkingDay(start, totalDays, holidaySet);
+
+  return {
+    status: "ok",
+    filingType,
+    rule: period.rule,
+    baseDays: period.days,
+    extensionDays: extension,
+    totalDays,
+    note: period.note,
+    rule22:
+      "Rule 22, Sec. 1 — the day of the act/event from which the period begins is excluded, the date of " +
+      "performance included; if the last day falls on a Saturday, Sunday, or legal holiday, time runs until " +
+      "the next working day.",
+    lastDay: toIso(lastDay),
+  };
+}
+
 export function registerComputeDeadline(server: McpServer): void {
   server.registerTool(
     "compute_deadline",
@@ -125,47 +179,7 @@ export function registerComputeDeadline(server: McpServer): void {
       },
     },
     async (args: z.infer<typeof Input>) => {
-      const period = PERIODS[args.filingType];
-      const start = parseIso(args.noticeDate);
-      if (!start) {
-        return textResult({
-          status: "invalid_date",
-          message: "noticeDate must be an ISO date (YYYY-MM-DD).",
-          lastDay: null,
-        });
-      }
-
-      const holidays = new Set(args.holidays ?? []);
-      for (const h of args.holidays ?? []) {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(h)) {
-          return textResult({
-            status: "invalid_date",
-            message: `holidays entries must be ISO dates (YYYY-MM-DD): ${h}`,
-            lastDay: null,
-          });
-        }
-      }
-
-      // Rule 45 §2 is the only period with an allowed extension (max 30 days);
-      // extensionDays is intentionally ignored for other filing types.
-      const extension = args.filingType === "appeal_certiorari_sc" ? (args.extensionDays ?? 0) : 0;
-      const totalDays = period.days + Math.min(extension, 30);
-      const lastDay = lastWorkingDay(start, totalDays, holidays);
-
-      return textResult({
-        status: "ok",
-        filingType: args.filingType,
-        rule: period.rule,
-        baseDays: period.days,
-        extensionDays: extension,
-        totalDays,
-        note: period.note,
-        rule22:
-          "Rule 22, Sec. 1 — the day of the act/event from which the period begins is excluded, the date of " +
-          "performance included; if the last day falls on a Saturday, Sunday, or legal holiday, time runs until " +
-          "the next working day.",
-        lastDay: toIso(lastDay),
-      });
+      return textResult(computeDeadline(args.filingType, args.noticeDate, args.holidays, args.extensionDays));
     },
   );
 }

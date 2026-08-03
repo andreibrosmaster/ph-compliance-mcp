@@ -8,7 +8,7 @@ root (project scope) or via the `claude mcp add` CLI. As of August 2026,
 
 ```bash
 cd /path/to/your/project
-claude mcp add ph-compliance -- node /abs/path/ph-legal-mcp/dist/src/server.js
+claude mcp add ph-compliance -- node /abs/path/ph-compliance-mcp/dist/src/server.js
 claude mcp list                      # verify
 ```
 
@@ -22,7 +22,7 @@ Scopes: `--scope user` (all projects), `--scope project` (this project),
   "mcpServers": {
     "ph-compliance": {
       "command": "node",
-      "args": ["/abs/path/ph-legal-mcp/dist/src/server.js"],
+      "args": ["/abs/path/ph-compliance-mcp/dist/src/server.js"],
       "env": {
         "PH_COMPLIANCE_CONFIDENCE_THRESHOLD": "0.5"
       }
@@ -38,7 +38,7 @@ Or via pnpm (no build step needed if you prefer tsx, slower startup):
   "mcpServers": {
     "ph-compliance": {
       "command": "pnpm",
-      "args": ["--dir", "/abs/path/ph-legal-mcp", "start"]
+      "args": ["--dir", "/abs/path/ph-compliance-mcp", "start"]
     }
   }
 }

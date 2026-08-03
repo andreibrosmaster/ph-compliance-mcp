@@ -26,8 +26,8 @@ the operating manual.
    Compliance MCP** (ADR-004). Package name, server name (`ph-compliance`),
    resource scheme (`ph-compliance://`), env prefix (`PH_COMPLIANCE_`), README,
    `llms.txt`, and docs must all say this. Never introduce new `ph-legal`
-   strings (the `ph-legal-mcp/` directory is a historical artifact renamed at
-   first git init).
+   strings (the pre-ADR-004 codename; the directory was renamed
+   `ph-compliance-mcp/` on 2026-08-03).
 3. **Scope: legal + compliance, 15 domains.** The V1 taxonomy is 15 domains
    (ADR-000 core 11 + ADR-004 compliance expansion: business-transactional,
    accounting, payroll, human-resources). Coverage includes statutes,

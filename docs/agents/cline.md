@@ -16,8 +16,8 @@ or `~/.config/Code/User/...`.)
 2. Add a **stdio** server:
    - **Name:** `ph-compliance`
    - **Command:** `node` (or `pnpm`)
-   - **Arguments:** `["/abs/path/ph-legal-mcp/dist/src/server.js"]`
-     (or `["--dir", "/abs/path/ph-legal-mcp", "start"]` for pnpm)
+   - **Arguments:** `["/abs/path/ph-compliance-mcp/dist/src/server.js"]`
+     (or `["--dir", "/abs/path/ph-compliance-mcp", "start"]` for pnpm)
 3. Save; Cline auto-refreshes the connection (green = connected).
 
 ## Via `mcp_settings.json`
@@ -27,7 +27,7 @@ or `~/.config/Code/User/...`.)
   "mcpServers": {
     "ph-compliance": {
       "command": "node",
-      "args": ["/abs/path/ph-legal-mcp/dist/src/server.js"],
+      "args": ["/abs/path/ph-compliance-mcp/dist/src/server.js"],
       "env": {
         "PH_COMPLIANCE_CONFIDENCE_THRESHOLD": "0.5"
       },

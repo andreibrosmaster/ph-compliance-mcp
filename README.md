@@ -65,7 +65,7 @@ full competitive positioning, and the research-backed source list in
   "mcpServers": {
     "ph-compliance": {
       "command": "npx",
-      "args": ["-y", "github:nicene-software/ph-compliance-mcp"]
+      "args": ["-y", "github:andreibrosmaster/ph-compliance-mcp"]
     }
   }
 }
@@ -217,7 +217,7 @@ docker compose up --build -d     # see compose.yaml
 - [docs/operations.md](./docs/operations.md) — post-production runbook:
   monitoring (`pnpm healthcheck`, `pnpm check:freshness`), backup/restore,
   upgrades, incident response, disaster recovery, weekly maintenance cadence.
-- [docs/release.md](./docs/release.md) — code (`v0.9.0`) vs corpus
+- [docs/release.md](./docs/release.md) — code (`v0.11.0`) vs corpus
   (`corpus-YYYY.MM.DD`) versioning, release gates (eval is release-blocking),
   rollback, post-release checklist.
 - [docs/governance.md](./docs/governance.md) — contribution model: branch

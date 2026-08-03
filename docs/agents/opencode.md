@@ -12,7 +12,7 @@ August 2026, local servers use `type: "local"` with `command` as an argv array.
   "mcp": {
     "ph-compliance": {
       "type": "local",
-      "command": ["node", "/abs/path/ph-legal-mcp/dist/src/server.js"],
+      "command": ["node", "/abs/path/ph-compliance-mcp/dist/src/server.js"],
       "enabled": true,
       "environment": {
         "PH_COMPLIANCE_CONFIDENCE_THRESHOLD": "0.5"

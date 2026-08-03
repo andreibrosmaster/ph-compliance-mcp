@@ -73,7 +73,7 @@ const PERIODS = [
 /** Residual catch-all, Art. 1149. */
 const RESIDUAL = { years: 5, article: "Art. 1149", category: "All other actions whose periods are not fixed in the Code or other laws" };
 
-type ActionKey = (typeof PERIODS)[number]["key"] | "other";
+export type ActionKey = (typeof PERIODS)[number]["key"] | "other";
 // z.enum requires a non-empty tuple; the spread of PERIODS.map is widened to
 // an array, so assert the tuple shape. Runtime values are exactly the 9 codal
 // keys + "other" (derived from PERIODS, so they cannot drift).
@@ -113,6 +113,54 @@ function toIso(d: Date): string {
   return `${d.getFullYear()}-${mm}-${dd}`;
 }
 
+/**
+ * Pure prescriptive-period computation (Civil Code Arts. 1144-1149). Exported
+ * so the tool, the eval harness, and the golden drift test share one source of
+ * truth for the deterministic calculation.
+ */
+export function computePrescription(
+  actionType: ActionKey,
+  causeOfActionDate?: string,
+) {
+  const period = actionType === "other" ? RESIDUAL : PERIODS.find((p) => p.key === actionType)!;
+
+  let deadline: string | null = null;
+  let deadlineNote: string | null = null;
+  if (causeOfActionDate) {
+    const start = parseIso(causeOfActionDate);
+    if (!start) {
+      return {
+        status: "invalid_date",
+        message: "causeOfActionDate must be an ISO date (YYYY-MM-DD).",
+        years: period.years,
+        article: period.article,
+        category: period.category,
+        deadline: null,
+      };
+    }
+    deadline = toIso(addYears(start, period.years));
+    deadlineNote =
+      "Computed from the accrual date as a calendar-day anniversary; Civil Code Art. 1155 provides " +
+      "that prescription is interrupted by a written extrajudicial demand, a judicial claim, or " +
+      "acknowledgment of the right, restarting the period.";
+  }
+
+  return {
+    status: "ok",
+    years: period.years,
+    article: period.article,
+    category: period.category,
+    authority: "Civil Code of the Philippines (RA 386), Book IV, Arts. 1144-1149",
+    residualNote:
+      actionType === "other"
+        ? "Residual 5-year period under Art. 1149 applies only where no specific period is fixed by the Civil Code or other laws."
+        : undefined,
+    causeOfActionDate: causeOfActionDate ?? null,
+    deadline,
+    deadlineNote,
+  };
+}
+
 export function registerComputePrescription(server: McpServer): void {
   server.registerTool(
     "compute_prescription",
@@ -135,43 +183,7 @@ export function registerComputePrescription(server: McpServer): void {
       },
     },
     async (args: z.infer<typeof Input>) => {
-      const period = args.actionType === "other" ? RESIDUAL : PERIODS.find((p) => p.key === args.actionType)!;
-
-      let deadline: string | null = null;
-      let deadlineNote: string | null = null;
-      if (args.causeOfActionDate) {
-        const start = parseIso(args.causeOfActionDate);
-        if (!start) {
-          return textResult({
-            status: "invalid_date",
-            message: "causeOfActionDate must be an ISO date (YYYY-MM-DD).",
-            years: period.years,
-            article: period.article,
-            category: period.category,
-            deadline: null,
-          });
-        }
-        deadline = toIso(addYears(start, period.years));
-        deadlineNote =
-          "Computed from the accrual date as a calendar-day anniversary; Civil Code Art. 1155 provides " +
-          "that prescription is interrupted by a written extrajudicial demand, a judicial claim, or " +
-          "acknowledgment of the right, restarting the period.";
-      }
-
-      return textResult({
-        status: "ok",
-        years: period.years,
-        article: period.article,
-        category: period.category,
-        authority: "Civil Code of the Philippines (RA 386), Book IV, Arts. 1144-1149",
-        residualNote:
-          args.actionType === "other"
-            ? "Residual 5-year period under Art. 1149 applies only where no specific period is fixed by the Civil Code or other laws."
-            : undefined,
-        causeOfActionDate: args.causeOfActionDate ?? null,
-        deadline,
-        deadlineNote,
-      });
+      return textResult(computePrescription(args.actionType, args.causeOfActionDate));
     },
   );
 }

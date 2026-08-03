@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Golden evaluation set — deterministic compute tools (Phase 5).
+
+  Exercises compute_13th_month, compute_prescription, and compute_deadline.
+  Unlike the search golden sets, these pairs do NOT depend on the corpus: the
+  tools are pure arithmetic over cited codal rules, so the answers are exact
+  and the pairs pass as soon as the server is built.
+
+  Same contract as evaluation.xml: each <plan> calls the tool with args, and
+  the <answer> must appear in the retrieved text (the JSON the tool returns).
+-->
+<evaluation>
+  <qa_pair>
+    <question>
+      Compute the 13th-month pay under PD 851 for a rank-and-file employee
+      with a total basic salary of PHP 360,000 earned within the calendar year.
+    </question>
+    <answer>30000</answer>
+    <plan>
+      <tool name="compute_13th_month" args='{"totalBasicSalary": 360000}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Compute the 13th-month pay for an employee who earned PHP 180,000 in
+      basic salary during the months worked in the calendar year.
+    </question>
+    <answer>15000</answer>
+    <plan>
+      <tool name="compute_13th_month" args='{"totalBasicSalary": 180000}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Under the Civil Code, what is the prescriptive period for an action upon
+      a written contract?
+    </question>
+    <answer>Art. 1144(1)</answer>
+    <plan>
+      <tool name="compute_prescription" args='{"actionType": "written_contract"}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Compute the deadline for an action upon a written contract whose cause of
+      action accrued on 2020-01-15.
+    </question>
+    <answer>2030-01-15</answer>
+    <plan>
+      <tool name="compute_prescription" args='{"actionType": "written_contract", "causeOfActionDate": "2020-01-15"}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      What is the last day to file a motion for new trial under Rule 37, given
+      notice on 2026-01-05, with no holidays?
+    </question>
+    <answer>2026-01-20</answer>
+    <plan>
+      <tool name="compute_deadline" args='{"filingType": "motion_new_trial", "noticeDate": "2026-01-05"}'/>
+    </plan>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Compute the last day for an appeal by certiorari to the Supreme Court
+      under Rule 45 with the maximum extension, notice on 2026-01-05.
+    </question>
+    <answer>2026-02-19</answer>
+    <plan>
+      <tool name="compute_deadline" args='{"filingType": "appeal_certiorari_sc", "noticeDate": "2026-01-05", "extensionDays": 30}'/>
+    </plan>
+  </qa_pair>
+</evaluation>

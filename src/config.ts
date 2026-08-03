@@ -12,8 +12,8 @@ const EnvSchema = z.object({
   PH_COMPLIANCE_CACHE_DIR: z.string().optional(),
   /** Base URL for corpus Release assets. Defaults to the GitHub latest release. */
   PH_COMPLIANCE_RELEASE_URL: z.string().optional(),
-  /** Owner/repo for the GitHub distribution, e.g. "nicene-software/ph-compliance-mcp". */
-  PH_COMPLIANCE_REPO: z.string().default("nicene-software/ph-compliance-mcp"),
+  /** Owner/repo for the GitHub distribution, e.g. "andreibrosmaster/ph-compliance-mcp". */
+  PH_COMPLIANCE_REPO: z.string().default("andreibrosmaster/ph-compliance-mcp"),
   /** Optional local override dir containing laws/cases/issuances sqlite + .sha256. */
   PH_COMPLIANCE_LOCAL_CORPUS: z.string().optional(),
   /** Confidence gate for retrieval tools (0..1). */
@@ -31,7 +31,7 @@ export interface Config {
 }
 
 export const SERVER_NAME = "ph-compliance";
-export const SERVER_VERSION = "0.10.1";
+export const SERVER_VERSION = "0.11.0";
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const parsed = EnvSchema.parse(env);
