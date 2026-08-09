@@ -40,8 +40,8 @@ importers:
         specifier: ^10.0.0
         version: 10.1.8(eslint@9.39.5)
       globals:
-        specifier: ^14.0.0
-        version: 14.0.0
+        specifier: ^17.9.0
+        version: 17.9.0
       prettier:
         specifier: ^3.3.0
         version: 3.9.6
@@ -958,6 +958,10 @@ packages:
 
   globals@14.0.0:
     resolution: {integrity: sha512-oahGvuMGQlPw/ivIYBjVSrWAfWLBeku5tpPE2fOPLi+WHffIWbuh2tCjhyQhTBPMf5E9jDEH4FOmTYgYwbKwtQ==}
+    engines: {node: '>=18'}
+
+  globals@17.9.0:
+    resolution: {integrity: sha512-m/MvAW61QVU5VDNF1Vj8axt016h8w7L5TU1e9zlab7XIttAT2YAlCwl75K1fOqvMM9apmD7lbCIRhpfkhmxhCg==}
     engines: {node: '>=18'}
 
   gopd@1.2.0:
@@ -2475,6 +2479,8 @@ snapshots:
       is-glob: 4.0.3
 
   globals@14.0.0: {}
+
+  globals@17.9.0: {}
 
   gopd@1.2.0: {}
 
