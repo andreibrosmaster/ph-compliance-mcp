@@ -49,7 +49,7 @@ change when retrieval underneath improves.
 | Storage | SQLite via `better-sqlite3`, 3 files | laws / cases / issuances (ADR-003) |
 | Search (V1) | SQLite FTS5 only | no vector dependency (ADR-002) |
 | Search (Phase 5) | + sqlite-vec, local embedding, rank fusion | only after lexical baseline validated |
-| HTML/PDF parsing | cheerio, pdf-parse/pdfjs-dist | ingestion-only |
+| HTML parsing | cheerio | ingestion-only |
 | Validation | zod | schema = docs = one source of truth |
 | Testing | vitest | |
 | Linting | eslint (flat) + prettier + `scripts/check-loc-budget.mjs` | warn >220 LOC, flag >350 |
