@@ -3,6 +3,43 @@
 All notable changes, per [Keep a Changelog](https://keepachangelog.com/).
 Unreleased work is tracked in the second brain's `roadmap.md`.
 
+## 0.12.0 — 2026-09-06 (Jurisprudence Seed + Graph Exercised End-to-End)
+
+### Added
+- **Case corpus grown 3 → 9 landmark decisions** (authored in
+  `generate-seed.mjs`; the seed-freshness gate keeps generator ↔ `data/seed`
+  byte-identical). New: Ang Tibay v. CIR (G.R. No. 46496, cardinal primary
+  rights), People v. Hernandez (G.R. Nos. L-6025-26, rebellion-absorption
+  doctrine), Naguiat v. NLRC (G.R. No. 116123, separation pay + legal tender),
+  Republic v. Molina (G.R. No. 108763, Art. 36 psychological-incapacity
+  guidelines), Imbong v. Ochoa (G.R. No. 204819, RH Law constitutionality), and
+  MMDA v. Concerned Residents of Manila Bay (G.R. Nos. 171947-48, continuing
+  mandamus). Citation numbers, dates, ponentes, divisions, and passage text
+  were verified against live LawPhil full texts; `retrievedAt` refreshed to the
+  verification date (provenance rule #5).
+- **The citation graph now carries real, resolved edges**: 7 case→statute
+  (Oposa→1987 Constitution, Hernandez→Revised Penal Code, Molina→Family Code,
+  Naguiat→Labor Code + Civil Code, Imbong→1987 Constitution,
+  MMDA→Administrative Code) plus the NIRC→TRAIN statute dependency — 9 of 12
+  extracted spans resolve; the 3 unresolvable ones stay honest as unresolved.
+- **End-to-end graph harness** `scripts/e2e-graph.mjs` — spawns the built
+  server over stdio like a real agent and asserts `related_laws`, `get_case`,
+  and `search_jurisprudence` behavior, including the honest count-0 and
+  `insufficient_corpus_coverage` paths.
+
+### Fixed
+- **Stale seed provenance URLs** — all three pre-existing case records pointed
+  at dead LawPhil `/jurisprudence/...` deep links (404); `sourceUrl` now uses
+  the live `judjuris` archive paths.
+- **Oposa's ecology-right citation corrected to Article II, Section 16** (the
+  committed record said Section 15; the decision's own quote and the
+  constitutional text say Sec. 16).
+- **`build-index.ts` now emits fresh `.sha256` sidecars** for each built sqlite
+  asset (`writeAssetChecksums` in `manifest.ts`, unit-tested). Previously any
+  local rebuild left the sidecars stale and corpus-loader refused the corpus
+  until checksums were hand-generated. CI publish flows overwrite them with
+  identical values, so release behavior is unchanged.
+
 ## 0.11.1 — 2026-09-06 (Security & Reliability Hardening)
 
 ### Security

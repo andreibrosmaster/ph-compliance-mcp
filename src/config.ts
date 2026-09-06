@@ -39,7 +39,7 @@ export interface Config {
 }
 
 export const SERVER_NAME = "ph-compliance";
-export const SERVER_VERSION = "0.11.1";
+export const SERVER_VERSION = "0.12.0";
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const parsed = EnvSchema.parse(env);

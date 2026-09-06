@@ -65,3 +65,21 @@ export function writeCorpusManifest(outDir: string, args: ManifestArgs): void {
   writeFileSync(join(outDir, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
   console.log(`[manifest] version ${args.stamp} written to ${join(outDir, "manifest.json")}`);
 }
+
+/**
+ * Emit a fresh `.sha256` sidecar next to each built sqlite asset (sha256sum
+ * format, the same the release/refresh workflows emit). Without this, every
+ * local rebuild invalidates corpus-loader's integrity check until someone
+ * hand-generates checksums — the mismatch that makes a freshly built corpus
+ * unloadable on the dev box. Workflows overwrite these with identical values
+ * at publish time, so CI behavior is unchanged.
+ */
+export function writeAssetChecksums(outDir: string, corpusNames: readonly string[]): void {
+  for (const name of corpusNames) {
+    const path = join(outDir, `${name}.sqlite`);
+    if (!existsSync(path)) continue;
+    const hex = sha256File(path);
+    writeFileSync(`${path}.sha256`, `${hex}  ${name}.sqlite\n`, "utf8");
+    console.log(`[checksum] ${name}.sqlite ${hex}`);
+  }
+}

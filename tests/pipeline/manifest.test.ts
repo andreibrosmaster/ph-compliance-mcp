@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { mkdtempSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { defaultStamp, writeCorpusManifest } from "../../data-pipeline/manifest.js";
+import { createHash } from "node:crypto";
+import { defaultStamp, writeAssetChecksums, writeCorpusManifest } from "../../data-pipeline/manifest.js";
 
 describe("corpus version manifest", () => {
   it("defaults the stamp to today's date as YYYY.MM.DD", () => {
@@ -69,5 +70,18 @@ describe("corpus version manifest", () => {
       corpora: Record<string, { sha256: string }>;
     };
     expect(a.corpora.laws!.sha256).toBe(b.corpora.laws!.sha256);
+  });
+
+  it("writeAssetChecksums emits sha256sum-format sidecars the loader verifies", () => {
+    const dir = mkdtempSync(join(tmpdir(), "ph-compliance-checksums-"));
+    writeFileSync(join(dir, "cases.sqlite"), "cases-bytes");
+    // No laws.sqlite on disk — must be skipped without throwing.
+
+    writeAssetChecksums(dir, ["laws", "cases"]);
+
+    const expected = createHash("sha256").update("cases-bytes").digest("hex");
+    const sidecar = readFileSync(join(dir, "cases.sqlite.sha256"), "utf8");
+    expect(sidecar).toBe(`${expected}  cases.sqlite\n`);
+    expect(existsSync(join(dir, "laws.sqlite.sha256"))).toBe(false);
   });
 });

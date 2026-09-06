@@ -242,7 +242,7 @@ async function main(): Promise<void> {
   // Drain the server's stderr — an unread pipe fills (~64KB), the server
   // blocks on its next write, and every subsequent tool call times out.
   transport.stderr?.on("data", () => {});
-  const client = new Client({ name: "ph-compliance-eval-harness", version: "0.11.1" });
+  const client = new Client({ name: "ph-compliance-eval-harness", version: "0.12.0" });
 
   let pairs: QaPair[];
   try {

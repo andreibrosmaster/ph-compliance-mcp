@@ -28,6 +28,8 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL("../", import.meta.url));
 const RETRIEVED_AT = "2026-08-02T00:00:00Z";
+/** Cases are verified from live primary sources (LawPhil full texts) on this date. */
+const CASES_RETRIEVED_AT = "2026-09-06T00:00:00Z";
 
 function sha256(text) {
   return createHash("sha256").update(text).digest("hex");
@@ -89,7 +91,7 @@ function caseRecord({ citation, title, court, promulgationDate, ponente, divisio
     kind: "case",
     record: {
       sourceUrl,
-      retrievedAt: RETRIEVED_AT,
+      retrievedAt: CASES_RETRIEVED_AT,
       contentHash: sha256(body),
       citation,
       title,
@@ -629,6 +631,10 @@ const issuances = [
 /* Cases                                                               */
 /* ------------------------------------------------------------------ */
 const cases = [
+  // Landmark: intergenerational environmental rights. Full text verified at the
+  // LawPhil judjuris archive (the old /jurisprudence/... deep links are dead).
+  // The ecology right is Art. II, Sec. 16 of the 1987 Constitution (the
+  // constitutional text itself; verified against the decision's own quote).
   caseRecord({
     citation: "G.R. No. 101083",
     title: "Oposa v. Factoran, Jr.",
@@ -636,11 +642,15 @@ const cases = [
     promulgationDate: "1993-07-30",
     ponente: "Davide, Jr.",
     division: "En Banc",
-    sourceUrl: `${LAWPHIL}/jurisprudence/supreme/court/1993/jul1993/gr_101083_1993.html`,
+    sourceUrl: `${LAWPHIL}/judjuris/juri1993/jul1993/gr_101083_1993.html`,
     passages: [
       {
         heading: "Right to a Balanced and Healthful Ecology",
-        body: "The right to a balanced and healthful ecology under Section 15, Article II of the 1987 Constitution carries with it the correlative duty to preserve and protect the environment for present and future generations; minors may sue in behalf of themselves and of generations yet unborn.",
+        body: "The right to a balanced and healthful ecology under Article II, Section 16 of the 1987 Constitution carries with it the correlative duty to preserve and protect the environment for present and future generations; minors may sue in behalf of themselves and of generations yet unborn.",
+      },
+      {
+        heading: "Intergenerational Responsibility and Cause of Action",
+        body: "In a broader sense, this petition bears upon the right of Filipinos to a balanced and healthful ecology which the petitioners dramatically associate with the twin concepts of inter-generational responsibility and inter-generational justice. The plaintiffs further asseverate that they represent their generation as well as generations yet unborn, and they invoke the constitutional policy of the State to protect and advance the right of the people to a balanced and healthful ecology in accord with the rhythm and harmony of nature.",
       },
     ],
   }),
@@ -651,7 +661,7 @@ const cases = [
     promulgationDate: "2001-03-02",
     ponente: "Bellosillo",
     division: "En Banc",
-    sourceUrl: `${LAWPHIL}/jurisprudence/supreme/court/2001/mar2001/gr_146710_2001.html`,
+    sourceUrl: `${LAWPHIL}/judjuris/juri2001/mar2001/gr_146710_2001.html`,
     passages: [
       {
         heading: "Waiver of Immunity — Plunder",
@@ -666,11 +676,143 @@ const cases = [
     promulgationDate: "2005-04-12",
     ponente: "Puno",
     division: "En Banc",
-    sourceUrl: `${LAWPHIL}/jurisprudence/supreme/court/2005/apr2005/gr_139325_2005.html`,
+    sourceUrl: `${LAWPHIL}/judjuris/juri2005/apr2005/gr_139325_2005.html`,
     passages: [
       {
         heading: "Forum Non Conveniens — Human Rights",
         body: "Philippine courts may take cognizance of suits brought by victims of human rights violations against foreign states, and the doctrine of forum non conveniens does not bar the exercise of jurisdiction where the forum is not clearly inappropriate.",
+      },
+    ],
+  }),
+  // Landmark: the seven cardinal primary rights of administrative due process.
+  // Full text verified on LawPhil (judjuris archive), February 27, 1940, Laurel, J.
+  caseRecord({
+    citation: "G.R. No. 46496",
+    title: "Ang Tibay v. Court of Industrial Relations",
+    court: "sc",
+    promulgationDate: "1940-02-27",
+    ponente: "Laurel",
+    division: "En Banc",
+    sourceUrl: `${LAWPHIL}/judjuris/juri1940/feb1940/gr_46496_1940.html`,
+    passages: [
+      {
+        heading: "The Cardinal Primary Rights of Administrative Due Process",
+        body: "The Court of Industrial Relations, while not strictly bound by technical rules of evidence and procedure, cannot entirely ignore or disregard the fundamental and essential requirements of due process in trials and investigations of an administrative character. There are cardinal primary rights which must be respected even in proceedings of this character: the right to a hearing, which includes the right of the party interested to present his own case and submit evidence in support thereof; the tribunal must consider the evidence presented; there must be some evidence to support a finding or conclusion, and the evidence must be substantial — such relevant evidence as a reasonable mind might accept as adequate to support a conclusion; the decision must be rendered on the evidence presented at the hearing, or at least contained in the record and disclosed to the parties affected; the tribunal must act on its own independent consideration of the law and facts of the controversy; and it should, in all controversial questions, render its decision in such a manner that the parties to the proceeding can know the various issues involved and the reasons for the decision rendered.",
+      },
+      {
+        heading: "Substantial Evidence and the Grant of a New Trial",
+        body: "Re-examining the entire record of the proceedings, the Court found no substantial evidence that the exclusion of the 89 laborers was due to their union affiliation or activity, and granted the respondent labor union a new trial, guided by the principle that mere uncorroborated hearsay or rumor does not constitute substantial evidence. The Court of Industrial Relations is a special court whose functions are specifically stated in the law of its creation, Commonwealth Act No. 103.",
+      },
+    ],
+  }),
+  // Landmark: the Hernandez doctrine — rebellion cannot be complexed with the
+  // common crimes committed in its course. Verbatim doctrinal text verified via
+  // the 1964 Labrador resolution on LawPhil and standard accounts of the merits;
+  // the merits decision is 99 Phil. 515 (1956).
+  caseRecord({
+    citation: "G.R. Nos. L-6025-26",
+    title: "People v. Hernandez",
+    court: "sc",
+    promulgationDate: "1956-07-18",
+    ponente: "Reyes",
+    division: "En Banc",
+    sourceUrl: `${LAWPHIL}/judjuris/juri1964/may1964/gr_l-6025_1964.html`,
+    passages: [
+      {
+        heading: "Rebellion Cannot Be Complexed with Other Crimes",
+        body: "The crime of rebellion is defined and punished under Article 134 of the Revised Penal Code. It cannot be complexed with any other crime committed in the course of its commission, since the common crimes of murder, arson, and robbery are mere ingredients of, or are absorbed by, the rebellion. The Court held that a single charge of rebellion suffices and the doctrine of absorption governs.",
+      },
+      {
+        heading: "Political Offense and the Right to Bail",
+        body: "Because rebellion is a political offense not punishable by death under the Revised Penal Code, the accused are entitled to the benefit of the constitutional guarantee of due process in the review of the evidence against them.",
+      },
+    ],
+  }),
+  // Labor: separation pay on closure not due to serious business losses.
+  // Full text verified on LawPhil, March 13, 1997, Panganiban, J., Third Division.
+  caseRecord({
+    citation: "G.R. No. 116123",
+    title: "Naguiat v. NLRC",
+    court: "sc",
+    promulgationDate: "1997-03-13",
+    ponente: "Panganiban",
+    division: "Third Division",
+    sourceUrl: `${LAWPHIL}/judjuris/juri1997/mar1997/gr_116123_1997.html`,
+    passages: [
+      {
+        heading: "Separation Pay on Closure Not Due to Serious Business Losses",
+        body: "Employees separated due to the closure or cessation of operations of the establishment not due to serious business losses or financial reverses are entitled to separation pay equivalent to one month pay or at least one-half month pay for every year of service, whichever is higher, as provided in Article 283 of the Labor Code. Business losses or financial reverses, in order to sustain closure of business and warrant exemption from the payment of separation pay, must be proved with clear and satisfactory evidence.",
+      },
+      {
+        heading: "Certiorari Is the Only Way a Labor Case May Reach the Supreme Court",
+        body: "In a petition for certiorari filed pursuant to Rule 65 of the Rules of Court, which is the only way a labor case may reach the Supreme Court, the petitioner must clearly show that the NLRC acted without or in excess of jurisdiction or with grave abuse of discretion amounting to lack of jurisdiction.",
+      },
+      {
+        heading: "Legal Tender and Currency of Labor Awards",
+        body: "Legal tender is that which a debtor may compel a creditor to accept in payment of the debt, as defined in commenting on Article 1249 of the Civil Code. The complainants, who are the creditors, can be compelled to accept the Philippine peso, which is the legal tender, in which case the table of conversion at the time of payment or satisfaction of the judgment should be used.",
+      },
+    ],
+  }),
+  // Family: the Molina guidelines on psychological incapacity (Art. 36).
+  // Full text verified on LawPhil, February 13, 1997, Panganiban, J., En Banc.
+  caseRecord({
+    citation: "G.R. No. 108763",
+    title: "Republic v. Court of Appeals and Molina",
+    court: "sc",
+    promulgationDate: "1997-02-13",
+    ponente: "Panganiban",
+    division: "En Banc",
+    sourceUrl: `${LAWPHIL}/judjuris/juri1997/feb1997/gr_108763_1997.html`,
+    passages: [
+      {
+        heading: "Psychological Incapacity — Gravity, Juridical Antecedence, Incurability",
+        body: "The Court handed down guidelines in the interpretation and application of Article 36 of the Family Code. Psychological incapacity should refer to no less than a mental, not physical, incapacity, confined to the most serious cases of personality disorders clearly demonstrative of an utter insensitivity or inability to give meaning and significance to the marriage; it must be characterized by gravity, juridical antecedence, and incurability, and must exist at the time of the celebration of the marriage. Mere showing of irreconcilable differences and conflicting personalities in no wise constitutes psychological incapacity; it is essential that the parties be shown to be incapable of doing so, due to some psychological, not physical, illness.",
+      },
+      {
+        heading: "The Molina Guidelines — Burden of Proof",
+        body: "The burden of proof to show the nullity of the marriage belongs to the plaintiff, and any doubt should be resolved in favor of the existence and continuation of the marriage and against its dissolution and nullity, because both the Constitution and the laws cherish the validity of marriage and the unity of the family.",
+      },
+    ],
+  }),
+  // Constitutional: the RH Law upheld in large part. Full text verified on
+  // LawPhil, April 8, 2014, Mendoza, J., En Banc.
+  caseRecord({
+    citation: "G.R. No. 204819",
+    title: "Imbong v. Ochoa, Jr.",
+    court: "sc",
+    promulgationDate: "2014-04-08",
+    ponente: "Mendoza",
+    division: "En Banc",
+    sourceUrl: `${LAWPHIL}/judjuris/juri2014/apr2014/gr_204819_2014.html`,
+    passages: [
+      {
+        heading: "Constitutionality of the RH Law",
+        body: "Republic Act No. 10354, otherwise known as the Responsible Parenthood and Reproductive Health Act of 2012, was assailed on the ground that it violated the right to life of the unborn; the protection of the life of the mother and the life of the unborn from conception is guaranteed by Article II, Section 12 of the 1987 Constitution. The Court upheld the law's constitutionality in large part while striking down specified provisions.",
+      },
+      {
+        heading: "Freedom of Religion and Conscientious Objectors",
+        body: "Freedom of religion was accorded preferred status by the framers of the fundamental law, and the Court resolved the challenges of health-care providers who invoked their religious beliefs against the referral obligations imposed by the law and its implementing rules.",
+      },
+    ],
+  }),
+  // Environmental: continuing mandamus for the Manila Bay cleanup. Full text
+  // verified on LawPhil, December 18, 2008, Velasco, Jr., J., En Banc.
+  caseRecord({
+    citation: "G.R. Nos. 171947-48",
+    title: "MMDA v. Concerned Residents of Manila Bay",
+    court: "sc",
+    promulgationDate: "2008-12-18",
+    ponente: "Velasco, Jr.",
+    division: "En Banc",
+    sourceUrl: `${LAWPHIL}/judjuris/juri2008/dec2008/gr_171947_2008.html`,
+    passages: [
+      {
+        heading: "Continuing Mandamus for the Cleanup of Manila Bay",
+        body: "The cleanup, rehabilitation, and preservation of Manila Bay can be compelled by mandamus because the agencies' obligations are ministerial in nature, being clear statutory impositions; under the doctrine of continuing mandamus, the Court may, under extraordinary circumstances, issue directives with the end in view of ensuring that its decision would not be set to naught by administrative inaction or indifference, and the heads of the agencies are directed to submit quarterly progressive reports of the activities undertaken in accordance with the decision.",
+      },
+      {
+        heading: "Statutory Mandates of the Government Agencies",
+        body: "The Department of Budget and Management is tasked, under Section 2, Title XVII, to ensure the efficient and sound utilization of government funds and revenues so as to effectively achieve the country's development objectives, as the Court applied in relation to Section 2 of the Administrative Code of 1987. The Court likewise traced the mandates of the agencies to their respective charters and enabling statutes, precluding them from choosing not to perform their duties toward the cleanup, rehabilitation, protection, and preservation of the Manila Bay.",
       },
     ],
   }),

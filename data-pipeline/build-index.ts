@@ -13,7 +13,7 @@
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { defaultStamp, writeCorpusManifest } from "./manifest.js";
+import { defaultStamp, writeAssetChecksums, writeCorpusManifest } from "./manifest.js";
 import { HttpClient } from "./http-client.js";
 import { openCorpusDb, insertCase, insertIssuance, insertStatute } from "./db.js";
 import { populateCitationGraph } from "./citations/populate.js";
@@ -122,7 +122,7 @@ async function ingestFromSources(
   const db = openCorpusDb(join(outDir, "laws.sqlite"), "laws");
   const cacheDir = join(outDir, ".http-cache");
   const client = new HttpClient({
-    userAgent: "ph-compliance-mcp/0.11.1 (corpus build; contact: repo issues)",
+    userAgent: "ph-compliance-mcp/0.12.0 (corpus build; contact: repo issues)",
     cacheDir,
     minDelayMs: 1000,
     maxConcurrency: 1,
@@ -297,9 +297,8 @@ async function main(): Promise<void> {
     console.log(`[${corpusName}] ${stats[corpusName]!.records} records, ${stats[corpusName]!.passages} passages/provisions indexed`);
   }
 
-  // Manifest honesty: the seed build reports only seed records; when --sources
-  // also ingested statutes into laws.sqlite, fold those into the manifest so
-  // the published record counts reflect the actual corpus.
+  // Manifest honesty: when --sources ingested statutes into laws.sqlite, fold
+  // them into the manifest so published record counts reflect the real corpus.
   if (ingestedFromSources.records > 0 && stats["laws"]) {
     stats["laws"] = {
       records: stats["laws"].records + ingestedFromSources.records,
@@ -337,12 +336,14 @@ async function main(): Promise<void> {
     sources,
     seedDir: seed,
   });
+
+  // Fresh .sha256 sidecars so a local rebuild is immediately loadable (see manifest.ts).
+  writeAssetChecksums(out, Object.keys(stats));
 }
 
 main().catch((err) => {
   console.error(err);
-  // Use exitCode (not process.exit) so Node drains pending handles (HTTP
-  // sockets, timers) naturally — process.exit() while a fetch handle is open
-  // crashes on Windows with a uv_handle_closing assertion.
+  // exitCode (not process.exit) so pending handles drain naturally —
+  // process.exit() with an open handle crashes on Windows (uv_handle_closing).
   process.exitCode = 1;
 });
