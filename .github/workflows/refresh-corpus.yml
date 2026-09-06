@@ -23,13 +23,13 @@ jobs:
     permissions:
       contents: write   # tag + release assets
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: pnpm
-      - run: pnpm install
+      - run: pnpm install --frozen-lockfile
       - run: pnpm build
 
       # Compute the corpus tag ONCE so the tag, push, and release all agree
@@ -93,7 +93,7 @@ jobs:
 
       - name: Publish corpus assets
         if: hashFiles('dist/corpus/*.sqlite') != ''
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.stamp.outputs.corpus_tag }}
           name: Corpus ${{ steps.stamp.outputs.corpus_date }}
