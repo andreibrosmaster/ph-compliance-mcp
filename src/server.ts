@@ -49,5 +49,10 @@ async function main(): Promise<void> {
 
 main().catch((err) => {
   process.stderr.write(`ph-compliance-mcp failed to start: ${err instanceof Error ? err.message : String(err)}\n`);
-  process.exit(1);
+  // Do NOT process.exit(1) here: a failed corpus download may still hold an
+  // open fetch socket, and exiting while libuv handles are pending crashes
+  // with a uv_handle_closing assertion on Windows (exit 0xC0000409) — the
+  // same failure mode fixed for build-index in 0.11.0. Set the exit code and
+  // let Node drain pending handles; the loop empties once the socket closes.
+  process.exitCode = 1;
 });

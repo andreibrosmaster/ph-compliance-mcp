@@ -54,6 +54,8 @@ function testConfig(dir: string): Config {
     repo: "test/ph-compliance-mcp",
     localCorpusDir: dir,
     confidenceThreshold: 0.4,
+    downloadTimeoutMs: 60000,
+    maxAssetBytes: 512 * 1024 * 1024,
     logLevel: "warn",
   };
 }

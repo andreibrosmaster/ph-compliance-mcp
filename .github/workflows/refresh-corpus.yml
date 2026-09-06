@@ -44,31 +44,41 @@ jobs:
 
       # Live ingestion from official sources (robots-respecting, throttled).
       # Catalog-driven: only instruments in data-pipeline/catalog.ts are fetched.
+      # NO `|| echo` swallow: build-index exits 1 when the source run ingests
+      # zero instruments (or crashes) — that must fail this job, not publish a
+      # stale seed-only corpus that masks the failure (0.11.0 hardening).
       - name: Ingest from official sources
         run: |
           mkdir -p dist/corpus
           pnpm build:corpus -- \
             --sources official-gazette,lawphil \
-            --seed data-pipeline/seed \
+            --seed data/seed \
             --out dist/corpus \
             --stamp "${{ steps.stamp.outputs.corpus_date }}" \
-            --since "$(date -d 'last month' +%Y-%m-%d)" \
-            || echo "live ingestion completed with warnings"
+            --since "$(date -d 'last month' +%Y-%m-%d)"
 
       # Version stamp + per-corpus SHA-256 checksums (load-bearing: the runtime
       # loader refuses to start on mismatch).
+      # HARD REQUIREMENT: all three sqlite assets must exist. An incomplete
+      # corpus published to Releases would 404 at runtime and brick every
+      # downstream server start (corpus-loader downloads all three).
       - name: Verify corpus integrity
         run: |
+          set -euo pipefail
           cd dist/corpus
           for f in laws.sqlite cases.sqlite issuances.sqlite; do
-            if [ -f "$f" ]; then
-              sha256sum "$f" > "$f.sha256"
-              echo "$f: $(wc -c < "$f") bytes, sha256 $(awk '{print $1}' "$f.sha256")"
-            else
-              echo "skipping $f (empty corpus this run)"
+            if [ ! -f "$f" ]; then
+              echo "::error::corpus build is incomplete: $f is missing — refusing to publish"
+              exit 1
             fi
+            sha256sum "$f" > "$f.sha256"
+            echo "$f: $(wc -c < "$f") bytes, sha256 $(awk '{print $1}' "$f.sha256")"
           done
-          test -f manifest.json && echo "manifest: $(head -8 manifest.json)"
+          if [ ! -f manifest.json ]; then
+            echo "::error::manifest.json missing — refusing to publish"
+            exit 1
+          fi
+          echo "manifest: $(head -8 manifest.json)"
 
       # Publish the built corpus as a tagged release (corpus-YYYY.MM.DD).
       # --force keeps a same-day re-run (workflow_dispatch) from failing on an

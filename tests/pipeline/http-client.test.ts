@@ -83,4 +83,53 @@ describe("HttpClient", () => {
     const res = await client.get("https://example.test/flaky");
     expect(res.text).toBe("recovered");
   });
+
+  it("treats unreachable robots.txt (5xx after retries) as full disallow", async () => {
+    // maxRetries: 1 → robots.txt is attempted twice, both 500.
+    fetchMock.mockImplementation(async (url: unknown) => {
+      if (String(url).endsWith("/robots.txt")) return mockResponse(500, "boom");
+      throw new Error("must not fetch anything: robots.txt unreachable");
+    });
+
+    const client = new HttpClient({ userAgent: "bot/1", cacheDir, minDelayMs: 0, maxRetries: 1 });
+    await expect(client.get("https://example.test/page")).rejects.toThrow(/robots\.txt disallows/);
+    // Only robots.txt attempts hit the mock — never the target URL.
+    expect(fetchMock.mock.calls.every(([u]) => String(u).endsWith("/robots.txt"))).toBe(true);
+  });
+
+  it("treats robots.txt 401/403 as full disallow", async () => {
+    fetchMock.mockImplementation(async (url: unknown) => {
+      if (String(url).endsWith("/robots.txt")) return mockResponse(403, "forbidden");
+      throw new Error("must not fetch anything: robots.txt 403");
+    });
+
+    const client = new HttpClient({ userAgent: "bot/1", cacheDir, minDelayMs: 0 });
+    await expect(client.get("https://example.test/page")).rejects.toThrow(/robots\.txt disallows/);
+  });
+
+  it("allows crawling when robots.txt is 404 (RFC 9309: other 4xx → allow)", async () => {
+    fetchMock
+      .mockResolvedValueOnce(mockResponse(404, "no robots here"))
+      .mockResolvedValueOnce(mockResponse(200, "allowed content"));
+
+    const client = new HttpClient({ userAgent: "bot/1", cacheDir, minDelayMs: 0 });
+    const res = await client.get("https://example.test/page");
+    expect(res.text).toBe("allowed content");
+  });
+
+  it("re-checks robots.txt on the redirect target", async () => {
+    fetchMock
+      .mockResolvedValueOnce(mockResponse(200, "User-agent: *\n")) // example.test robots: allow
+      .mockImplementationOnce(async () => {
+        const res = mockResponse(200, "redirected content");
+        Object.defineProperty(res, "url", { value: "https://other.test/page" });
+        return res;
+      })
+      .mockResolvedValueOnce(mockResponse(200, "User-agent: *\nDisallow: /\n")); // other.test robots: deny all
+
+    const client = new HttpClient({ userAgent: "bot/1", cacheDir, minDelayMs: 0 });
+    await expect(client.get("https://example.test/page")).rejects.toThrow(
+      /robots\.txt disallows redirected target/,
+    );
+  });
 });

@@ -122,7 +122,7 @@ async function ingestFromSources(
   const db = openCorpusDb(join(outDir, "laws.sqlite"), "laws");
   const cacheDir = join(outDir, ".http-cache");
   const client = new HttpClient({
-    userAgent: "ph-compliance-mcp/0.11.0 (corpus build; contact: repo issues)",
+    userAgent: "ph-compliance-mcp/0.11.1 (corpus build; contact: repo issues)",
     cacheDir,
     minDelayMs: 1000,
     maxConcurrency: 1,
@@ -273,6 +273,23 @@ async function main(): Promise<void> {
 
   const records = loadSeedRecords(seed);
   console.log(`Loaded ${records.length} seed records`);
+  // An all-empty build (no seed records AND nothing ingested from sources)
+  // is never a useful artifact — it produces empty sqlite files that look
+  // legitimate in a Release but answer nothing at runtime. This exact drift
+  // (workflows pointing --seed at a dir with no *.jsonl) shipped empty
+  // corpora in every weekly release before it was caught.
+  if (
+    records.length === 0 &&
+    ingestedFromSources.records === 0 &&
+    !sourcesAllowEmpty
+  ) {
+    console.error(
+      `[build-corpus] ERROR: seed dir "${seed}" yielded 0 records and no source ingestion succeeded — ` +
+        `refusing to build an empty corpus. Check --seed points at the directory with *.jsonl files ` +
+        `(the shipped seed is data/seed), or pass --sources-allow-empty explicitly.`,
+    );
+    process.exitCode = 1;
+  }
 
   const stats: Record<string, { records: number; passages: number }> = {};
   for (const corpusName of corpus.split(",").map((s) => s.trim())) {

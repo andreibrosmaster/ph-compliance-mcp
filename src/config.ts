@@ -18,6 +18,10 @@ const EnvSchema = z.object({
   PH_COMPLIANCE_LOCAL_CORPUS: z.string().optional(),
   /** Confidence gate for retrieval tools (0..1). */
   PH_COMPLIANCE_CONFIDENCE_THRESHOLD: z.coerce.number().min(0).max(1).default(0.4),
+  /** Per-request download timeout for corpus assets (ms). */
+  PH_COMPLIANCE_DOWNLOAD_TIMEOUT_MS: z.coerce.number().int().positive().default(60000),
+  /** Per-asset download size cap (MB) — refuses absurdly large responses. */
+  PH_COMPLIANCE_MAX_ASSET_MB: z.coerce.number().int().positive().default(512),
   PH_COMPLIANCE_LOG_LEVEL: z.enum(["debug", "info", "warn", "error"]).default("info"),
 });
 
@@ -27,11 +31,15 @@ export interface Config {
   repo: string;
   localCorpusDir?: string;
   confidenceThreshold: number;
+  /** Download timeout for corpus assets, in milliseconds. */
+  downloadTimeoutMs: number;
+  /** Per-asset download size cap, in bytes. */
+  maxAssetBytes: number;
   logLevel: "debug" | "info" | "warn" | "error";
 }
 
 export const SERVER_NAME = "ph-compliance";
-export const SERVER_VERSION = "0.11.0";
+export const SERVER_VERSION = "0.11.1";
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const parsed = EnvSchema.parse(env);
@@ -46,6 +54,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     repo: parsed.PH_COMPLIANCE_REPO,
     localCorpusDir: parsed.PH_COMPLIANCE_LOCAL_CORPUS,
     confidenceThreshold: parsed.PH_COMPLIANCE_CONFIDENCE_THRESHOLD,
+    downloadTimeoutMs: parsed.PH_COMPLIANCE_DOWNLOAD_TIMEOUT_MS,
+    maxAssetBytes: parsed.PH_COMPLIANCE_MAX_ASSET_MB * 1024 * 1024,
     logLevel: parsed.PH_COMPLIANCE_LOG_LEVEL,
   };
 }

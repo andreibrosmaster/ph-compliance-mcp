@@ -3,6 +3,65 @@
 All notable changes, per [Keep a Changelog](https://keepachangelog.com/).
 Unreleased work is tracked in the second brain's `roadmap.md`.
 
+## 0.11.1 — 2026-09-06 (Security & Reliability Hardening)
+
+### Security
+- **All dependency advisories cleared (11, incl. 4 HIGH)** — pnpm overrides for
+  `hono >=4.12.34`, `qs >=6.16.0`, `fast-uri >=3.1.6` (SSRF/host-confusion chain
+  via the MCP SDK's express/ajv tree), and `nanoid >=3.3.18` (dev chain).
+  `pnpm audit --prod` and `pnpm audit` are both clean; `--prod` stays a CI gate.
+- **Corpus integrity is now fail-closed** — a missing/unfetchable checksum file
+  (HTTP 404, network error) previously downloaded and loaded the corpus WITHOUT
+  verification (contradicting the no-tampered-corpus design constraint); it now
+  refuses to download. Checksum bodies are validated as 64-hex (an HTML error
+  page served as 200 can no longer act as an integrity anchor). Local-corpus
+  overrides still verify when a sidecar is present and warn when absent.
+- **Download hardening** — corpus downloads are timeout-bounded
+  (`PH_COMPLIANCE_DOWNLOAD_TIMEOUT_MS`, default 60s) and size-bounded
+  (`PH_COMPLIANCE_MAX_ASSET_MB`, default 512MB; enforced via Content-Length and
+  while streaming) — no startup hang, no OOM via a misdirected response.
+- **Atomic cache writes** — corpus assets are written temp-file-then-rename, so
+  concurrent servers sharing `~/.cache` can never observe a half-written sqlite
+  file; the checksum sidecar is written first so a crash forces re-download.
+- **robots.txt fail-closed (RFC 9309 §2.4.2.1)** — unreachable or 5xx (after
+  retries) robots.txt now means FULL DISALLOW; previously any transient error
+  flipped the crawler to allow-all. 401/403 = disallow; other 4xx = allow.
+  Redirect targets are re-checked against their origin's robots rules.
+
+### Fixed
+- **`scripts/healthcheck.mjs` and `scripts/check-freshness.mjs` were not
+  executable under Node** — both contained TypeScript syntax in `.mjs` files
+  (the Docker HEALTHCHECK and the ops runbook shipped broken). Fixed and
+  verified live (healthy: 15 domains); both probes now carry a watchdog
+  (`PH_COMPLIANCE_HEALTHCHECK_TIMEOUT_MS`, default 60s) so a hung server fails
+  the probe instead of hanging Docker forever.
+- **Workflows pointed `--seed` at an empty directory** — `ci.yml`,
+  `refresh-corpus.yml`, and `release.yml` all passed `--seed
+  data-pipeline/seed/` (format-doc only, no `*.jsonl`); the authoritative seed
+  lives in `data/seed/`. This is the concrete mechanism behind stale/empty
+  corpus releases: CI could never build from seed. All three fixed; a guard in
+  `build-index.ts` now refuses to build when the seed yields 0 records and no
+  source ingestion succeeded (exit 1).
+- **Workflows no longer swallow corpus-build failures** — the `|| echo
+  "...warnings"` wrappers that turned hard failures into green runs are gone;
+  publishing now requires all three sqlite assets + `manifest.json` (a partial
+  corpus in a Release bricks every downstream server start).
+- **`release.yml`'s eval gate was vacuous** — the gates job never built a
+  corpus, so `pnpm eval:all` always exited 2 (coverage-blocked, treated as
+  non-blocking) and the gate passed on every release. It now builds the seed
+  corpus first and fails the release when the gate cannot actually run.
+- **Server startup crash path** — `main().catch` no longer `process.exit(1)`
+  while a failed corpus download's socket is still open (Windows
+  `uv_handle_closing`, exit 0xC0000409 — same root cause fixed for build-index
+  in 0.11.0); sets `process.exitCode` and lets handles drain.
+- **ATTACH failures are visible** — a corrupt/locked cases/issuances file was
+  silently swallowed, defusing the error to confusing query failures later;
+  now logged as a warning at startup.
+- **Eval harness cannot hang** — MCP handshake/tool calls are time-bounded
+  (60s), the spawned server's stderr pipe is drained (unread pipes fill and
+  deadlock the server), and the server is closed even when a pair run throws.
+  `eval-all.mjs` bounds each child (15 min) and reports spawn failures.
+
 ## 0.11.0 — 2026-08-03 (Identity Completion + Compute Eval Gate + Corpus Growth)
 
 ### Changed

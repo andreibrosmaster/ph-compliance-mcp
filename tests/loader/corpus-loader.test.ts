@@ -14,6 +14,8 @@ function config(overrides: Partial<Config> = {}): Config {
     releaseUrl: "https://example.test/releases/download",
     repo: "test/ph-compliance-mcp",
     confidenceThreshold: 0.4,
+    downloadTimeoutMs: 60000,
+    maxAssetBytes: 512 * 1024 * 1024,
     logLevel: "info",
     ...overrides,
   };
@@ -45,7 +47,7 @@ describe("ensureCorpusAsset", () => {
     // Fresh Response per call: a consumed body cannot be re-read, and both
     // ensureCorpusAsset calls must hit the same mismatched checksum.
     fetchMock.mockImplementation(async (url: unknown) => {
-      if (String(url).endsWith(".sha256")) return new Response("deadbeef  laws.sqlite\n", { status: 200 });
+      if (String(url).endsWith(".sha256")) return new Response(`${"ab".repeat(32)}  laws.sqlite\n`, { status: 200 });
       return new Response(ASSET, { status: 200 });
     });
 
@@ -78,6 +80,71 @@ describe("ensureCorpusAsset", () => {
 
     await ensureCorpusAsset(cfg, "laws");
     expect(fetchMock.mock.calls.some((c) => String(c[0]).endsWith("laws.sqlite"))).toBe(true);
+  });
+
+  it("refuses to download when the checksum file is missing (fail closed)", async () => {
+    fetchMock.mockImplementation(async (url: unknown) => {
+      if (String(url).endsWith(".sha256")) return new Response("not found", { status: 404 });
+      throw new Error("asset must not be downloaded without a checksum");
+    });
+
+    const cfg = config();
+    await expect(ensureCorpusAsset(cfg, "laws")).rejects.toThrow(/refusing to download/);
+    await expect(ensureCorpusAsset(cfg, "laws")).rejects.toThrow(CorpusLoadError);
+    // Nothing was cached.
+    const { access } = await import("node:fs/promises");
+    await expect(access(join(cfg.cacheDir, "laws.sqlite"))).rejects.toThrow();
+  });
+
+  it("refuses when the checksum body is not a 64-hex sha256", async () => {
+    fetchMock.mockImplementation(async (url: unknown) => {
+      if (String(url).endsWith(".sha256")) return new Response("<html>502 Bad Gateway</html>", { status: 200 });
+      throw new Error("asset must not be downloaded without a valid checksum");
+    });
+
+    await expect(ensureCorpusAsset(config(), "laws")).rejects.toThrow(/invalid checksum file/);
+  });
+
+  it("wraps fetch failures (timeout/abort) as CorpusLoadError", async () => {
+    fetchMock.mockImplementation(async () => {
+      const e = new Error("The operation was aborted due to timeout");
+      e.name = "TimeoutError";
+      throw e;
+    });
+
+    await expect(ensureCorpusAsset(config(), "laws")).rejects.toThrow(CorpusLoadError);
+  });
+
+  it("refuses an asset over the configured size cap (Content-Length)", async () => {
+    fetchMock
+      .mockResolvedValueOnce(new Response(`${HASH}  laws.sqlite\n`, { status: 200 }))
+      .mockResolvedValueOnce(
+        new Response(ASSET, {
+          status: 200,
+          headers: { "content-length": String(600 * 1024 * 1024) },
+        }),
+      );
+
+    const cfg = config({ maxAssetBytes: 512 * 1024 * 1024 });
+    await expect(ensureCorpusAsset(cfg, "laws")).rejects.toThrow(/safety cap/);
+  });
+
+  it("refuses a streamed asset that grows past the size cap", async () => {
+    // Stream whose chunks total over the 64-byte cap (no honest Content-Length).
+    const big = Buffer.alloc(100, 0x41);
+    const stream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(big);
+        controller.enqueue(big);
+        controller.close();
+      },
+    });
+    fetchMock
+      .mockResolvedValueOnce(new Response(`${HASH}  laws.sqlite\n`, { status: 200 }))
+      .mockResolvedValueOnce(new Response(stream, { status: 200 }));
+
+    const cfg = config({ maxAssetBytes: 64 });
+    await expect(ensureCorpusAsset(cfg, "laws")).rejects.toThrow(/exceeds the 64-byte safety cap/);
   });
 
   it("uses a local corpus dir override when checksum matches", async () => {

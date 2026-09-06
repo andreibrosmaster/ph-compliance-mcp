@@ -50,16 +50,23 @@ export function connectCorpus(paths: CorpusPaths): CorpusConnection {
   cases.pragma("query_only = ON");
   issuances.pragma("query_only = ON");
 
-  // ATTACH provides cross-DB query capability for later phases.
-  try {
-    laws.exec(`ATTACH DATABASE '${paths.cases.replace(/'/g, "''")}' AS cases_db`);
-  } catch {
-    // cases.sqlite may legitimately be empty/minimal pre-Phase 3; still usable.
-  }
-  try {
-    laws.exec(`ATTACH DATABASE '${paths.issuances.replace(/'/g, "''")}' AS issuances_db`);
-  } catch {
-    // issuances.sqlite stays empty until Phase 3 (ADR-003).
+  // ATTACH provides cross-DB query capability for later phases. An empty
+  // corpus attaches fine — a FAILURE here means a corrupt or locked file,
+  // which must be visible, not silently swallowed (queries would fail later
+  // with confusing errors far from the root cause).
+  for (const [alias, path] of [
+    ["cases_db", paths.cases],
+    ["issuances_db", paths.issuances],
+  ] as const) {
+    try {
+      // ATTACH cannot be parameterized; the only escapable char in a SQLite
+      // string literal is the single quote.
+      laws.exec(`ATTACH DATABASE '${path.replace(/'/g, "''")}' AS ${alias}`);
+    } catch (err) {
+      process.stderr.write(
+        `[ph-compliance] WARNING: could not ATTACH ${alias} (${path}): ${err instanceof Error ? err.message : String(err)}\n`,
+      );
+    }
   }
 
   return {

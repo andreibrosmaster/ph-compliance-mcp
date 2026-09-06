@@ -34,8 +34,28 @@ jobs:
       - run: pnpm check:loc
       - run: pnpm audit --prod
       - run: pnpm build
+      # The eval gate is only real if the corpus exists: run-eval auto-wires
+      # dist/corpus when present and exits 2 (coverage-blocked) when absent.
+      # Without this build step the gate passed vacuously on every release.
+      # Seed-only build (no --sources): this gate verifies RETRIEVAL, not the
+      # live ingestion path — that is refresh-corpus.yml's job.
+      - name: Build seed corpus for the eval gate
+        run: pnpm build:corpus -- --seed data/seed --out dist/corpus
       - name: Golden eval gate
-        run: pnpm eval:all || if [ $? -eq 2 ]; then echo "coverage-blocked (corpus not seeded) — non-blocking"; else exit $?; fi
+        run: |
+          set +e
+          pnpm eval:all
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo "eval gate passed"
+          elif [ "$code" -eq 2 ]; then
+            echo "::error::eval coverage-blocked — the seed corpus build above failed or is empty; this gate cannot pass vacuously"
+            exit 2
+          else
+            echo "::error::golden eval regression — release-blocking"
+            exit "$code"
+          fi
 
   build-corpus:
     runs-on: ubuntu-latest
@@ -59,22 +79,32 @@ jobs:
           STAMP="${GITHUB_REF_NAME#v}"
           STAMP="${STAMP#corpus-}"
           echo "using corpus stamp: ${STAMP}"
+          # No error swallow: build-index exits 1 when --sources ingests zero
+          # instruments (stale-corpus guard) or the build itself fails.
           pnpm build:corpus -- \
             --sources official-gazette,lawphil \
-            --seed data-pipeline/seed \
+            --seed data/seed \
             --out dist/corpus \
-            --stamp "${STAMP}" \
-            || echo "corpus build completed with warnings (may be seed-free smoke)"
-      - name: Generate SHA-256 checksums (wired from Phase 0)
+            --stamp "${STAMP}"
+      # A partial corpus published to Releases bricks every downstream server
+      # start (corpus-loader downloads all three assets + manifest). Require
+      # completeness instead of "at least one sqlite file exists".
+      - name: Verify corpus completeness + checksums (wired from Phase 0)
         run: |
+          set -euo pipefail
           cd dist/corpus
           for f in laws.sqlite cases.sqlite issuances.sqlite; do
-            if [ -f "$f" ]; then
-              sha256sum "$f" > "$f.sha256"
-            else
-              echo "skipping $f (asset not built this run)"
+            if [ ! -f "$f" ]; then
+              echo "::error::corpus build is incomplete: $f is missing — refusing to publish"
+              exit 1
             fi
+            sha256sum "$f" > "$f.sha256"
+            echo "$f: $(wc -c < "$f") bytes, sha256 $(awk '{print $1}' "$f.sha256")"
           done
+          if [ ! -f manifest.json ]; then
+            echo "::error::manifest.json missing — refusing to publish"
+            exit 1
+          fi
       - name: Publish release assets
         if: hashFiles('dist/corpus/*.sqlite') != ''
         uses: softprops/action-gh-release@v2

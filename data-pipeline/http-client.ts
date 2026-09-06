@@ -4,7 +4,9 @@
  * - Descriptive User-Agent
  * - Conditional GETs (ETag / Last-Modified) with an on-disk cache; a 304
  *   revalidates and returns cached bytes (doubles as change detection).
- * - robots.txt respected (see robots.ts)
+ * - robots.txt respected with RFC 9309 semantics: unreachable, 401/403, and
+ *   5xx (after retries) robots.txt mean FULL DISALLOW, not allow-all; redirect
+ *   targets are re-checked (see robots.ts)
  * - Low concurrency + minimum inter-request delay
  *
  * CI-only usage; never imported by the runtime server.
@@ -47,7 +49,8 @@ interface CacheEntry {
 
 export class HttpClient {
   readonly options: Required<Omit<HttpClientOptions, never>>;
-  private robotsCache = new Map<string, ReturnType<typeof parseRobots>>();
+  /** Per-origin robots rules, or "disallow-all" when robots.txt is unreachable/forbidden. */
+  private robotsCache = new Map<string, ReturnType<typeof parseRobots> | "disallow-all">();
   private lastRequestAt = 0;
   private inFlight = 0;
   private queue: Array<() => void> = [];
@@ -85,26 +88,62 @@ export class HttpClient {
     this.lastRequestAt = Date.now();
   }
 
-  /** Fetch robots.txt for an origin and cache the parsed rules in memory. */
+  /**
+   * Fetch robots.txt for an origin and cache the parsed rules in memory.
+   *
+   * RFC 9309 §2.4.2.1 discipline — fail CLOSED:
+   * - 2xx: parse the rules.
+   * - 401/403 (or unreachable after retries): complete disallow. Crawling an
+   *   origin whose robots.txt we cannot read is exactly how a polite crawler
+   *   becomes an abusive one; a transient 5xx previously flipped this client
+   *   into allow-all and crawled anyway.
+   * - other 4xx: allow all (per RFC), empty rules.
+   */
   async checkRobots(url: string): Promise<boolean> {
     const u = new URL(url);
     const origin = `${u.protocol}//${u.host}`;
     let rules = this.robotsCache.get(origin);
-    if (!rules) {
+    if (rules === undefined) {
+      rules = await this.fetchRobots(origin);
+      this.robotsCache.set(origin, rules);
+    }
+    if (rules === "disallow-all") return false;
+    return isPathAllowed(rulesForAgent(rules, this.options.userAgent), u.pathname);
+  }
+
+  private async fetchRobots(
+    origin: string,
+  ): Promise<ReturnType<typeof parseRobots> | "disallow-all"> {
+    const url = `${origin}/robots.txt`;
+    let lastErr: unknown = new Error("not attempted");
+    for (let attempt = 0; attempt <= this.options.maxRetries; attempt++) {
       try {
-        const { res, cancelTimer } = await this.fetchWithTimeout(`${origin}/robots.txt`, {});
+        const { res, cancelTimer } = await this.fetchWithTimeout(url, {});
         try {
-          const text = await res.text();
-          rules = parseRobots(text);
+          if (res.ok) {
+            return parseRobots(await res.text());
+          }
+          // Release the socket before retrying or concluding.
+          await res.body?.cancel().catch(() => undefined);
+          if (res.status === 401 || res.status === 403) return "disallow-all";
+          if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+            return parseRobots(""); // RFC 9309: other 4xx → allow all
+          }
+          lastErr = new Error(`HTTP ${res.status}`); // 429/5xx: retry
         } finally {
           cancelTimer();
         }
-      } catch {
-        rules = new Map(); // default: allow all
+      } catch (err) {
+        lastErr = err;
       }
-      this.robotsCache.set(origin, rules);
+      if (attempt < this.options.maxRetries) {
+        await new Promise((r) => setTimeout(r, 500 * 2 ** attempt));
+      }
     }
-    return isPathAllowed(rulesForAgent(rules, this.options.userAgent), u.pathname);
+    process.stderr.write(
+      `[http-client] robots.txt unreachable for ${origin} (${lastErr instanceof Error ? lastErr.message : String(lastErr)}) — treating as full disallow (RFC 9309).\n`,
+    );
+    return "disallow-all";
   }
 
   /** Fetch a URL with conditional-GET caching. Throws on disallowed by robots. */
@@ -164,6 +203,12 @@ export class HttpClient {
       const bytes = Buffer.from(await res.arrayBuffer());
       const etag = res.headers.get("etag") ?? undefined;
       const lastModified = res.headers.get("last-modified") ?? undefined;
+      // Redirects: fetch follows them silently, but robots.txt is evaluated
+      // per-target. If the FINAL URL's robots disallow it, the content must
+      // not be used even though the original URL was allowed.
+      if (res.url && res.url !== url && !(await this.checkRobots(res.url))) {
+        throw new Error(`robots.txt disallows redirected target: ${res.url}`);
+      }
       await this.writeCache(url, etag, lastModified, bytes);
       return {
         url,

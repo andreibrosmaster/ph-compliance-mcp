@@ -18,6 +18,15 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 
 const SERVER_ARGS = process.argv.slice(2).length > 0 ? process.argv.slice(2) : ["dist/src/server.js"];
 
+/** Probe-level watchdog: a hung server (or hung corpus download) must fail the
+ *  probe, not hang Docker's HEALTHCHECK forever. Default 60s. */
+const PROBE_TIMEOUT_MS = Number.parseInt(process.env.PH_COMPLIANCE_HEALTHCHECK_TIMEOUT_MS ?? "60000", 10);
+const watchdog = setTimeout(() => {
+  console.error(`unhealthy: probe timed out after ${PROBE_TIMEOUT_MS}ms (server hung or corpus download stalled)`);
+  process.exit(1);
+}, PROBE_TIMEOUT_MS);
+watchdog.unref();
+
 async function main() {
   const transport = new StdioClientTransport({
     command: "node",
@@ -27,9 +36,7 @@ async function main() {
   const client = new Client({ name: "ph-compliance-healthcheck", version: "0.8.0" });
   try {
     await client.connect(transport);
-    const result = (await client.callTool({ name: "list_domains", arguments: {} })) as {
-      structuredContent?: { status?: string; domains?: unknown[] };
-    };
+    const result = await client.callTool({ name: "list_domains", arguments: {} });
     const sc = result.structuredContent ?? {};
     if (sc.status === "ok" && Array.isArray(sc.domains) && sc.domains.length > 0) {
       console.log(`healthy: ${sc.domains.length} domains`);

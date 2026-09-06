@@ -39,7 +39,19 @@ const TSX_CLI = join(require.resolve("tsx/package.json"), "..", "dist", "cli.mjs
 function runSet(golden) {
   const r = spawnSync(process.execPath, [TSX_CLI, "evals/run-eval.ts", "--golden", golden], {
     stdio: "inherit",
+    // Belt-and-braces: run-eval has its own per-call watchdogs; this bounds
+    // the whole child so a wedged startup cannot hang CI forever.
+    timeout: 15 * 60 * 1000,
+    killSignal: "SIGKILL",
   });
+  if (r.error) {
+    console.error(`[eval-all] ${golden} spawn failed: ${r.error.message}`);
+    return 2;
+  }
+  if (r.signal) {
+    console.error(`[eval-all] ${golden} killed by ${r.signal} (timeout?)`);
+    return 1;
+  }
   return r.status ?? 1;
 }
 

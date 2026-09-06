@@ -124,6 +124,24 @@ interface PairResult {
 
 const CORPUS_ASSETS = ["laws", "cases", "issuances"] as const;
 
+/** Hard ceiling on any single MCP round-trip — a hung server must fail the
+ *  run (exit 2), not hang CI forever. Generous: tool calls are local SQLite. */
+const MCP_CALL_TIMEOUT_MS = 60_000;
+
+async function withTimeLimit<T>(p: Promise<T>, ms: number, what: string): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      p,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${what} timed out after ${ms}ms (server hung?)`)), ms);
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 /**
  * Point the spawned server at a locally built corpus (dist/corpus) when one
  * exists, emitting the .sha256 sidecars corpus-loader verifies — mirroring
@@ -159,7 +177,11 @@ async function runPair(
   for (const step of plan) {
     let result;
     try {
-      result = (await client.callTool({ name: step.tool, arguments: step.args })) as {
+      result = (await withTimeLimit(
+        client.callTool({ name: step.tool, arguments: step.args }),
+        MCP_CALL_TIMEOUT_MS,
+        `tool ${step.tool}`,
+      )) as {
         content?: Array<{ type: string; text?: string }>;
         structuredContent?: { status?: string };
       };
@@ -217,7 +239,10 @@ async function main(): Promise<void> {
       Object.entries(process.env).filter(([key]) => key.startsWith("PH_COMPLIANCE_")),
     ),
   });
-  const client = new Client({ name: "ph-compliance-eval-harness", version: "0.11.0" });
+  // Drain the server's stderr — an unread pipe fills (~64KB), the server
+  // blocks on its next write, and every subsequent tool call times out.
+  transport.stderr?.on("data", () => {});
+  const client = new Client({ name: "ph-compliance-eval-harness", version: "0.11.1" });
 
   let pairs: QaPair[];
   try {
@@ -233,7 +258,7 @@ async function main(): Promise<void> {
 
   let started = false;
   try {
-    await client.connect(transport);
+    await withTimeLimit(client.connect(transport), MCP_CALL_TIMEOUT_MS, "server handshake");
     started = true;
   } catch (err) {
     console.error(`[eval] failed to start server: ${err instanceof Error ? err.message : String(err)}`);
@@ -242,17 +267,25 @@ async function main(): Promise<void> {
   }
 
   const results: PairResult[] = [];
-  let index = 0;
-  for (const pair of pairs) {
-    index++;
-    const res = await runPair(client, pair, args.verbose);
-    results.push(res);
-    const mark = res.pass ? "PASS" : res.coverage ? "COVER" : "FAIL";
-    console.log(`  [${index}/${pairs.length}] ${mark}: ${pair.question.slice(0, 110)}`);
-    if (!res.pass) console.log(`         ${res.detail}`);
+  try {
+    let index = 0;
+    for (const pair of pairs) {
+      index++;
+      const res = await runPair(client, pair, args.verbose);
+      results.push(res);
+      const mark = res.pass ? "PASS" : res.coverage ? "COVER" : "FAIL";
+      console.log(`  [${index}/${pairs.length}] ${mark}: ${pair.question.slice(0, 110)}`);
+      if (!res.pass) console.log(`         ${res.detail}`);
+    }
+  } finally {
+    // Always tear down the spawned server, even when a pair run throws —
+    // otherwise the child lingers holding the corpus files open.
+    try {
+      await client.close();
+    } catch {
+      // transport may already be gone
+    }
   }
-
-  await client.close();
 
   const passed = results.filter((r) => r.pass).length;
   const coverage = results.filter((r) => r.coverage).length;

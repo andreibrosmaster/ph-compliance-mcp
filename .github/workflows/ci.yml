@@ -46,7 +46,8 @@ jobs:
       - name: Corpus build smoke (empty seed dir is fine; validates pipeline wiring)
         run: |
           mkdir -p dist/corpus
-          pnpm build:corpus -- --seed data-pipeline/seed --out dist/corpus || echo "corpus build requires seed data — skipped in smoke"
+          pnpm build:corpus -- --seed data/seed --out dist/corpus || echo "corpus smoke build failed"
+          test -f dist/corpus/laws.sqlite || (echo "::error::corpus smoke build produced no laws.sqlite" && exit 1)
 
   eval:
     runs-on: ubuntu-latest
